@@ -1,3 +1,14 @@
+__pycache__/
+.vscode/
+bin/
+build/
+data/
+examples/*/Reconstructions/
+ScreenCamera_*.json
+ScreenCamera_*.png
+DepthCamera_*.json
+DepthCamera_*.png
+
 
 
 
