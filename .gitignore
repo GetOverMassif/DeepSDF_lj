@@ -4,6 +4,7 @@ bin/
 build/
 data/
 examples/*/Reconstructions/
+data.json
 viewpoint.json
 ScreenCamera_*.json
 ScreenCamera_*.png
