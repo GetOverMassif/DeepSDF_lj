@@ -300,7 +300,6 @@ def main_function(experiment_directory, continue_from, batch_split):
         sys.exit(0)
 
     def adjust_learning_rate(lr_schedules, optimizer, epoch):
-
         for i, param_group in enumerate(optimizer.param_groups):
             param_group["lr"] = lr_schedules[i].get_learning_rate(epoch)
 

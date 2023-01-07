@@ -85,64 +85,64 @@ if __name__ == "__main__":
 
     arg_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
-        description="Pre-processes data from a data source and append the results to "
+        description = "Pre-processes data from a data source and append the results to "
         + "a dataset.",
     )
     arg_parser.add_argument(
         "--data_dir",
         "-d",
-        dest="data_dir",
-        required=True,
-        help="The directory which holds all preprocessed data.",
+        dest = "data_dir",
+        required = True,
+        help = "The directory which holds all preprocessed data.",
     )
     arg_parser.add_argument(
         "--source",
         "-s",
-        dest="source_dir",
-        required=True,
-        help="The directory which holds the data to preprocess and append.",
+        dest = "source_dir",
+        required = True,
+        help = "The directory which holds the data to preprocess and append.",
     )
     arg_parser.add_argument(
         "--name",
         "-n",
-        dest="source_name",
-        default=None,
-        help="The name to use for the data source. If unspecified, it defaults to the "
+        dest = "source_name",
+        default = None,
+        help = "The name to use for the data source. If unspecified, it defaults to the "
         + "directory name.",
     )
     arg_parser.add_argument(
         "--split",
-        dest="split_filename",
-        required=True,
-        help="A split filename defining the shapes to be processed.",
+        dest = "split_filename",
+        required = True,
+        help = "A split filename defining the shapes to be processed.",
     )
     arg_parser.add_argument(
         "--skip",
-        dest="skip",
-        default=False,
-        action="store_true",
-        help="If set, previously-processed shapes will be skipped",
+        dest = "skip",
+        default = False,
+        action = "store_true",
+        help = "If set, previously-processed shapes will be skipped",
     )
     arg_parser.add_argument(
         "--threads",
-        dest="num_threads",
-        default=8,
-        help="The number of threads to use to process the data.",
+        dest = "num_threads",
+        default = 8,
+        help = "The number of threads to use to process the data.",
     )
     arg_parser.add_argument(
         "--test",
         "-t",
-        dest="test_sampling",
-        default=False,
-        action="store_true",
-        help="If set, the script will produce SDF samplies for testing",
+        dest = "test_sampling",
+        default = False,
+        action = "store_true",
+        help = "If set, the script will produce SDF samplies for testing",
     )
     arg_parser.add_argument(
         "--surface",
-        dest="surface_sampling",
-        default=False,
-        action="store_true",
-        help="If set, the script will produce mesh surface samples for evaluation. "
+        dest = "surface_sampling",
+        default = False,
+        action = "store_true",
+        help = "If set, the script will produce mesh surface samples for evaluation. "
         + "Otherwise, the script will produce SDF samples for training.",
     )
 

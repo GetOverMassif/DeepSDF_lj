@@ -4,6 +4,11 @@ import os
 import show_npz
 import json
 
+def getCoordinateAxis(T = np.eye(4), frameSize = 0.5):
+    gCoordinateAxis = o3d.geometry.TriangleMesh.create_coordinate_frame().\
+            scale(frameSize, np.array([0., 0., 0.]))
+    return gCoordinateAxis.transform(T)
+
 def get_xyz_boundary(pcd_surfacePts):
     [x1,y1,z1,x2,y2,z2] = [-10000,-10000,-10000,10000,10000,10000]
     for p in list(np.asarray(pcd_surfacePts.points)):
@@ -15,16 +20,26 @@ def get_xyz_boundary(pcd_surfacePts):
         z2 = min(z2,p[2])
     return [x1,y1,z1], [x2,y2,z2]
 
-def get_cube_lineset(xyz_max, xyz_min, color):
+def get_cube_lineset(xyz_max, xyz_min, color, xyz_centroid = [0,0,0]):
     [x1, y1, z1] = xyz_max
     [x2, y2, z2] = xyz_min
+    d = xyz_centroid
     points = [[x1,y1,z2],[x1,y2,z2],[x2,y2,z2],[x2,y1,z2],[x1,y1,z1],[x1,y2,z1],[x2,y2,z1],[x2,y1,z1]]
+    points = [[(p[i] - d[i]) for i in range(3)] for p in points]
     pointPairs = [[0,1],[1,2],[2,3],[3,0],[0,4],[1,5],[2,6],[3,7],[4,5],[5,6],[6,7],[7,4]]
     cube_lineset = o3d.geometry.LineSet()
     cube_lineset.lines = o3d.utility.Vector2iVector(pointPairs)
     cube_lineset.paint_uniform_color(color)
     cube_lineset.points = o3d.utility.Vector3dVector(points)
     return cube_lineset
+
+def get_meshObj_and_scale(obj_file, color):
+    mesh = o3d.io.read_triangle_mesh(obj_file)
+    xyz_max = [max([x[i] for x in mesh.vertices]) for i in range(3)]
+    xyz_min = [min([x[i] for x in mesh.vertices]) for i in range(3)]
+    mesh.compute_vertex_normals()
+    mesh.paint_uniform_color(color)
+    return mesh, xyz_max, xyz_min
 
 def get_meshObj(obj_file, color, T = np.eye(4)):
     mesh = o3d.io.read_triangle_mesh(obj_file)
@@ -116,19 +131,46 @@ class Visualizer:
         self.cuModelIdx = os.path.splitext(self.recMesh_file_List[self.cuRecMeshIdx])[0]
         print("file:", self.cuRecMeshIdx,"/", self.recMesh_file_Num," : ", self.cuModelIdx)
 
+        axis = getCoordinateAxis(np.eye(4), 0.6)
+        self.vis.add_geometry(axis)
         norm_file_path = os.path.join(self.shapeNet_path, "data/NormalizationParameters/ShapeNetV2/04256520")
         norm_file = os.path.join(norm_file_path, self.cuModelIdx + ".npz")
         norm_data = np.load(norm_file)
         offset, scale = list(norm_data['offset']), float(norm_data['scale'])
-        T_st = T_scale(scale, offset)
+        # T_st = T_scale(scale, offset)
 
         # 1. show .obj: origin object meshes
         print("1.[Origin object meshes] - O")
         oriMesh_file_path = os.path.join(self.shapeNet_path, "ShapeNetCore.v2/04256520")
         oriMesh_file = os.path.join(oriMesh_file_path, self.cuModelIdx + "/models/model_normalized.obj")
-        self.mgOriMesh = get_meshObj(oriMesh_file, [i/255 for i in [112, 128, 144]], T_st)
+        json_path = os.path.join(oriMesh_file_path, self.cuModelIdx + "/models/model_normalized.json")
+
+        # with open(json_path, "r") as f:
+        #     json_data = json.load(f)
+        #     xyz_max, xyz_min = json_data["max"], json_data["min"]
+        #     s = [(xyz_max[i] - xyz_min[i]) for i in range(3)]  # s = [w,h,l]
+        #     # whl_min = min(s)
+        #     # ds = [whl_min / x for x in s]
+        #     ds = [2 / x for x in s]
+        #     T_st = np.array([[ds[0],0,0,0],[0,ds[1],0,0],[0,0,ds[2],0],[0,0,0,1]])
+        #     # xyz_min_adj = [-x for x in xyz_max_adj]
+
+        self.mgOriMesh, xyz_max, xyz_min = get_meshObj_and_scale(oriMesh_file, [i/255 for i in [112, 128, 144]])
+        xyz_cen = [-(xyz_max[i] + xyz_min[i]) / 2 for i in range(3)]
+        xyz_scale = [(xyz_max[i] - xyz_min[i]) / 2 for i in range(3)]
+
+        ds = [1 / x for x in xyz_scale]
+        Rs = np.array([[ds[0],0,0],[0,ds[1],0],[0,0,ds[2]]])
+        Rt = np.dot(Rs, xyz_cen)
+        T_st = np.eye(4)
+        T_st[:3,:3] = Rs
+        T_st[:3,3] = Rt
+        self.mgOriMesh.transform(T_st)
+        self.mgOriMeshCube = get_cube_lineset([1,1,1], [-1,-1,-1], [1,0,0])
+
         if self.mode[0]:
             self.vis.add_geometry(self.mgOriMesh)
+            self.vis.add_geometry(self.mgOriMeshCube)
         
         # 2. show .npz: SDF samples
         print("2.[SDF Samples] - S")
@@ -144,7 +186,7 @@ class Visualizer:
             self.vis.add_geometry(self.mgSDFSapsOut, False)
         if self.show_cube:
             self.vis.add_geometry(cube_lineset, False)
-
+        
         # 3. show .ply: surface points
         print("3.[Surface Points] - P")
         surfacePts_file_path = os.path.join(self.shapeNet_path, "data/SurfaceSamples/ShapeNetV2/04256520")
@@ -204,9 +246,3 @@ class Visualizer:
 if __name__ == "__main__":
     visualizer = Visualizer()
     
-    # model_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/04256520"
-    # model_json_path = os.path.join(model_path, file_name+"/models/model_normalized.json")
-    # with open(model_json_path, "r") as f:
-    #     json_data = json.load(f)
-    #     print(json_data["max"])
-    #     print(json_data["min"])
