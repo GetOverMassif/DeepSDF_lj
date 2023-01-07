@@ -4,6 +4,9 @@ bin/
 build/
 data/
 examples/*/Reconstructions/
+examples/*/LatentCodes/*.pth
+examples/*/ModelParameters/*.pth
+examples/*/OptimizerParameters/*.pth
 data.json
 viewpoint.json
 ScreenCamera_*.json
