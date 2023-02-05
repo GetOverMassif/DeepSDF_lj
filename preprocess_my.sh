@@ -1,0 +1,2 @@
+python processMeshToDifferentRatio.py
+python preprocess_data_my.py --data_dir /media/lj/TOSHIBA/dataset/ShapeNet/deformed_data --source /media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2 --name ShapeNetV2 --split examples/splits/sv2_chairs_train_little.json --skip

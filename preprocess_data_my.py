@@ -231,7 +231,7 @@ if __name__ == "__main__":
             try:
                 mesh_filenames = deep_sdf.data.find_meshes_in_directory(shape_dir)
                 target_instance_dir = os.path.join(target_dir, instance_dir)
-                print("target_instance_dir = ", target_instance_dir)
+                # print("target_instance_dir = ", target_instance_dir)
                 if not os.path.exists(target_instance_dir):
                     os.makedirs(target_instance_dir)
 
@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
                     processed_filepath = os.path.join(target_instance_dir, mesh_num + extension)
 
-                    print("[processed_filepath] ", processed_filepath)
+                    # print("[processed_filepath] ", processed_filepath)
 
                     if args.skip and os.path.isfile(processed_filepath):
                         logging.debug("skipping " + processed_filepath)
