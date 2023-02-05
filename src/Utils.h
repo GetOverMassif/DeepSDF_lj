@@ -66,3 +66,8 @@ float BoundingCubeNormalization(
     pangolin::Geometry& geom,
     const bool fitToUnitSphere,
     const float buffer = 1.03);
+
+std::vector<float> BoundingCubeNormalizationWithSize(
+    pangolin::Geometry& geom,
+    bool fitToUnitSphere,
+    const float buffer = 1.03);

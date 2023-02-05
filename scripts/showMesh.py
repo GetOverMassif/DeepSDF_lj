@@ -39,10 +39,19 @@ class Visualizer:
         self.vis.register_key_callback(ord('X'), self.step_random)  # R
         # self.vis.register_key_callback(ord('R'), self.exitVis)  # R
 
-        self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/normed_ShapeNetCore.v2/03001627"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/03001627"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/normed_ShapeNetCore.v2/03001627"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/1007e20d5e811b308351982a6e40cf41"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/1013f70851210a618f2e765c4a8ed3d"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/cbbbb3aebaf2e112ca07b3f65fc99919"
+        self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/cbbf0aacb76a1ed17b20cb946bceb58f"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/03001627/1007e20d5e811b308351982a6e40cf41/models"
         # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/04256520"
-        self.instances = os.listdir(self.file_path)
+        dirs = os.listdir(self.file_path)
+        self.instances = []
+        for dataname in dirs:
+            print("dataname: ", dataname)
+            if os.path.splitext(dataname)[1] == '.obj':
+                self.instances.append(dataname)
         self.instance_num = len(self.instances)
         self.current_idx = -1
 
@@ -94,7 +103,8 @@ class Visualizer:
         print("file:", self.current_idx,"/", self.instance_num,",",\
                 # len(self.checked_meshes), "checked",\
                 ":", self.cuModelIdx,)
-        file_name = os.path.join(self.file_path, self.cuModelIdx + "/model_normalized.obj")
+        # file_name = os.path.join(self.file_path, self.cuModelIdx + "/model_normalized.obj")
+        file_name = os.path.join(self.file_path, str(self.current_idx) + ".obj")
         # file_name = os.path.join(self.file_path, self.cuModelIdx + "/models/model_normalized.obj")
         mesh = o3d.io.read_triangle_mesh(file_name)
         # print(len(mesh.vertices))

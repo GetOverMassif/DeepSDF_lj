@@ -35,10 +35,10 @@ def process(old_instance_path, new_instance_path):
     T_no = np.linalg.inv(T_on)
 
     Trans = {}
-    Trans['T_on'] = [list(x) for x in T_on]
-    Trans['T_no'] = [list(x) for x in T_no]
-    Trans['center'] = xyz_cen
-    Trans['scale'] = xyz_scale
+    Trans['T_on'] = [list(x) for x in T_on]   # from origin to normalization
+    Trans['T_no'] = [list(x) for x in T_no]   # from normalization to origin
+    Trans['center'] = xyz_cen    # trans from origin to normalization
+    Trans['scale'] = xyz_scale   # size of origin
     Trans['scale_inv'] = ds
 
     b = json.dumps(Trans)

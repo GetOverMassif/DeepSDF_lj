@@ -21,10 +21,10 @@
   "AdditionalSnapshots" : [2],
   "LearningRateSchedule" : [
     {
-      "Type" : "Step",
-      "Initial" : 0.0005,
-      "Interval" : 500,
-      "Factor" : 0.5
+        "Type" : "Step",
+        "Initial" : 0.0005,
+        "Interval" : 500,
+        "Factor" : 0.5
     },
     {
       "Type" : "Step",
@@ -34,7 +34,7 @@
     }],
   "SamplesPerScene" : 16384,
   "ScenesPerBatch" : 24,
-  "DataLoaderThreads" : 16,
+  "DataLoaderThreads" : 12,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,
   "CodeRegularizationLambda" : 1e-4,

@@ -155,10 +155,12 @@ if __name__ == "__main__":
     additional_general_args = []
 
     deepsdf_dir = os.path.dirname(os.path.abspath(__file__))
+    # 表面采样
     if args.surface_sampling:
         executable = os.path.join(deepsdf_dir, "bin/SampleVisibleMeshSurface")
         subdir = ws.surface_samples_subdir
         extension = ".ply"
+    # 预处理网格
     else:
         executable = os.path.join(deepsdf_dir, "bin/PreprocessMesh")
         subdir = ws.sdf_samples_subdir
@@ -166,7 +168,7 @@ if __name__ == "__main__":
 
         if args.test_sampling:
             additional_general_args += ["-t"]
-
+    # 打开划分文件
     with open(args.split_filename, "r") as f:
         split = json.load(f)
 
@@ -194,10 +196,12 @@ if __name__ == "__main__":
 
     append_data_source_map(args.data_dir, args.source_name, args.source_dir)
 
+    # ShapeNetV2
     class_directories = split[args.source_name]
 
     meshes_targets_and_specific_args = []
 
+    # 03001627
     for class_dir in class_directories:
         class_path = os.path.join(args.source_dir, class_dir)
         instance_dirs = class_directories[class_dir]
@@ -254,7 +258,6 @@ if __name__ == "__main__":
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=int(args.num_threads)
     ) as executor:
-
         for (
             mesh_filepath,
             target_filepath,
