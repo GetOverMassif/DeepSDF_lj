@@ -1,7 +1,7 @@
 import numpy as np
 import open3d as o3d
 import os
-import show_npz
+import scripts.show_npz as show_npz
 import json
 
 def getCoordinateAxis(T = np.eye(4), frameSize = 0.5):

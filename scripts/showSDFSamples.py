@@ -2,7 +2,7 @@ import open3d as o3d
 import numpy as np
 import os, sys
 sys.path.append("..")
-from show_npz import get_npz_points
+from scripts.show_npz import get_npz_points
 
 def save_view_point(vis, filename = "viewpoint.json"):
     param = vis.get_view_control().convert_to_pinhole_camera_parameters()

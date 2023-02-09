@@ -251,19 +251,16 @@ def main_function(experiment_directory, continue_from, batch_split):
 
     logging.debug("running " + experiment_directory)
 
+    """ 1. 加载实验参数json文件、数据源、训练集 """
     specs = ws.load_experiment_specifications(experiment_directory)
-    # print(specs["Description"])
     logging.info("Experiment description: \n" + specs["Description"][0])
-
     data_source = specs["DataSource"]
     train_split_file = specs["TrainSplit"]
 
+    """ 2. 导入模型，获取编码长度、检测点(周期数)、学习参数、梯度参数 """
     arch = __import__("networks." + specs["NetworkArch"], fromlist=["Decoder"])
-
     logging.debug(specs["NetworkSpecs"])
-
     latent_size = specs["CodeLength"]
-
     checkpoints = list(
         range(
             specs["SnapshotFrequency"],
@@ -271,17 +268,15 @@ def main_function(experiment_directory, continue_from, batch_split):
             specs["SnapshotFrequency"],
         )
     )
-
     for checkpoint in specs["AdditionalSnapshots"]:
         checkpoints.append(checkpoint)
     checkpoints.sort()
-
     lr_schedules = get_learning_rate_schedules(specs)
-
     grad_clip = get_spec_with_default(specs, "GradientClipNorm", None)
     if grad_clip is not None:
         logging.debug("clipping gradients to max norm {}".format(grad_clip))
 
+    """ 3. 定义存储函数、终止函数、学习率调整函数、统计函数 """
     def save_latest(epoch):
         save_model(experiment_directory, "latest.pth", decoder, epoch)
         save_optimizer(experiment_directory, "latest.pth", optimizer_all, epoch)
@@ -307,70 +302,92 @@ def main_function(experiment_directory, continue_from, batch_split):
         mean = torch.mean(lat_mat, 0)
         var = torch.var(lat_mat, 0)
         return mean, var
-
     signal.signal(signal.SIGINT, signal_handler)
 
+    """ 4. 获取各场景点数、各场景批数、倒角距离、编码正则化、Lambda、CodeBound 等参数 """
     num_samp_per_scene = specs["SamplesPerScene"]
     scene_per_batch = specs["ScenesPerBatch"]
     clamp_dist = specs["ClampingDistance"]
     minT = -clamp_dist
     maxT = clamp_dist
     enforce_minmax = True
-
     do_code_regularization = get_spec_with_default(specs, "CodeRegularization", True)
     code_reg_lambda = get_spec_with_default(specs, "CodeRegularizationLambda", 1e-4)
-
     code_bound = get_spec_with_default(specs, "CodeBound", None)
 
-    # TODO: create decoder
+    """ 5. 创建解码器，在模块级实现数据并行; 读取训练周期数、日志频率等信息 """
+    # latent_size += 3
     decoder = arch.Decoder(latent_size + 3, **specs["NetworkSpecs"]).cuda()
     # decoder = arch.Decoder(latent_size, **specs["NetworkSpecs"]).cuda()
-
     logging.info("training with {} GPU(s)".format(torch.cuda.device_count()))
-
     # if torch.cuda.device_count() > 1:
     decoder = torch.nn.DataParallel(decoder)
-
     num_epochs = specs["NumEpochs"]
     log_frequency = get_spec_with_default(specs, "LogFrequency", 10)
 
+    """ 6. 指定训练集数据划分文件，设定加载线程数，加载数据 """
     with open(train_split_file, "r") as f:
         train_split = json.load(f)
+    
+    ratio_per_vec = specs["RatioPerScene"]
 
-    sdf_dataset = deep_sdf.data.SDFSamples(
-        data_source, train_split, num_samp_per_scene, load_ram=False
+    # SDFSamples(数据源、训练集划分、各场景采样数、是否加载ram)
+    # sdf_dataset = deep_sdf.data.SDFSamples(
+    #     data_source, train_split, num_samp_per_scene, load_ram=False
+    # )
+
+    sdf_dataset = deep_sdf.data_util.SDFSamples(
+        data_source, train_split, ratio_per_vec, num_samp_per_scene, load_ram=False
     )
 
     num_data_loader_threads = get_spec_with_default(specs, "DataLoaderThreads", 1)
     logging.debug("loading data with {} threads".format(num_data_loader_threads))
 
+    # 数据加载器。结合数据集和采样器，并提供数据集的迭代
+    # 支持具有单进程或多进程加载、自定义加载顺序和可选的自动批处理（整理）和内存固定的映射样式和可迭代样式数据集。
     sdf_loader = data_utils.DataLoader(
-        sdf_dataset,
-        batch_size=scene_per_batch,
-        shuffle=True,
-        num_workers=num_data_loader_threads,
-        drop_last=True,
+        sdf_dataset,  # 加载数据的数据集来源
+        batch_size=scene_per_batch,  # 每批量数量
+        shuffle=True,  # 是否需要在每个周期重新调整数据
+        num_workers=num_data_loader_threads,  # 多少个子进程用于数据加载
+        drop_last=True,  # 如果数据集大小不能被批次数量整除，是否删除最后的不完整批次
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
-
     num_scenes = len(sdf_dataset)
-
     logging.info("There are {} scenes".format(num_scenes))
-
     logging.debug(decoder)
 
+    """ 7. 获取符合高斯分布的随机编码 """
     # 获取满足高斯分布的编码(总模型数，编码维度，编码范数)
-    lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+    # Embedding : 一个简单的查找表，用于存储固定字典和大小的嵌入
+
+    # vecs : N * 64 , N * k * 3 -> kN * 67  (k = 8)
+
+    lat_vecs_origin = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+
+    scale_vecs = torch.tensor([[0.6,0.6,0.6]])
+    scale_vecs = scale_vecs.expand(num_scenes * ratio_per_vec, -1)
+
     torch.nn.init.normal_(
-        lat_vecs.weight.data,
+        lat_vecs_origin.weight.data,
         0.0,
         get_spec_with_default(specs, "CodeInitStdDev", 1.0) / math.sqrt(latent_size),
     )
 
+    lat_vecs = torch.nn.Embedding(num_scenes * ratio_per_vec, latent_size + 3, max_norm=code_bound)
+
+    # print("shape1 = ", lat_vecs_origin.weight.data.unsqueeze(1).expand(-1,ratio_per_vec,-1).reshape(-1,latent_size).shape)
+    # print("shape2 = ", scale_vecs.shape)
+    
+    lat_vecs.weight.data = \
+        torch.cat((lat_vecs_origin.weight.data.unsqueeze(1).expand(-1,ratio_per_vec,-1).reshape(-1,latent_size),
+                  scale_vecs), 1)
+
+
     logging.debug(
         "initialized with mean magnitude {}".format(
-            get_mean_latent_vector_magnitude(lat_vecs)
+            get_mean_latent_vector_magnitude(lat_vecs_origin)
         )
     )
 
@@ -454,36 +471,41 @@ def main_function(experiment_directory, continue_from, batch_split):
     for epoch in range(start_epoch, num_epochs + 1):
 
         start = time.time()
-
         logging.info("epoch {}...".format(epoch))
-
         # 第一个周期不进行训练
         decoder.train()
-        # print("after decoder.train()\n")
 
         adjust_learning_rate(lr_schedules, optimizer_all, epoch)
 
         cnt_sdf = 0
-        # 根据模型遍历sdf数据
+        # 根据模型遍历sdf数据, 遍历 cnt_sdf = 0～133, 134 * 24 = 3216
+        # 需要处理的数据： 3217 * 16384 * (64 + 3 + 1)
+        #            -> 3217 * 8 * 16384 * (64 + 3 + 3 + 1)
         for sdf_data, indices in sdf_loader:
+            print("[cnt_sdf : %d]" % cnt_sdf)
             cnt_sdf += 1
+            
+            # sdf_data: 
+            # torch.Size([24, 16384, 4]) -> torch.Size([393216, 4])
+
+            # print("sdf_data = ", sdf_data)
+            # print("sdf_data.shape = ", sdf_data.shape)
             # Process the input data: x,y,z,sdf
             sdf_data = sdf_data.reshape(-1, 4)
 
             num_sdf_samples = sdf_data.shape[0]
-            # print("num_sdf_samples : ", num_sdf_samples)
-
             sdf_data.requires_grad = False
-
             xyz = sdf_data[:, 0:3]
-            # print("xyz1: ", xyz.shape)
+
+            # sdf_gt: torch.Size([393216, 1])
             sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
             if enforce_minmax:
                 sdf_gt = torch.clamp(sdf_gt, minT, maxT)
-
+            
+            # xyz: <class 'tuple'>
             xyz = torch.chunk(xyz, batch_split)
-            # print("xyz2: ", xyz.shape)
+
             indices = torch.chunk(
                 indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1),
                 batch_split,
@@ -492,39 +514,55 @@ def main_function(experiment_directory, continue_from, batch_split):
             sdf_gt = torch.chunk(sdf_gt, batch_split)
 
             batch_loss = 0.0
-
             optimizer_all.zero_grad()
 
-            # 
+            # 分批放入解码器训练，如分4批进行, 98304 = 24 * 16384 / 4
             for i in range(batch_split):
-                # print("[%d,%d]"%(cnt_sdf,i))
+                print("[batch_split : %d]" % i)
                 batch_vecs = lat_vecs(indices[i])
-                # print("\nlat_vecs", lat_vecs)
-                # print("\nlat_vecs()", lat_vecs)
-                # print("\nindices[i]", indices[i])
-                # print("\nindices[i].shape", indices[i].shape)
+
+                # batch_vecs:  torch.Size([98304, 64])
+                #             tensor([[code1 ......],
+                #                     [code2 ......],
+                #                         ......
+                #                     [code_n .....]])
+
+                # lat_vecs: Embedding(3217, 64, max_norm=1.0)
+
+                # indices[i] : torch.Size([98304])
+                #              tensor([2174, 2174, 2174,  ..., 2354, 2354, 2354])
+
                 scale = torch.tensor([0.6, 0.6, 0.6])
                 scale = scale.expand(indices[i].shape[0],-1)
-                # print("\nbatch_vecs.shape : ", batch_vecs.shape)
+
+                # scale: torch.Size([98304, 3])
+                # xyz[i]: torch.Size([98304, 3])
+                # print("\nlat_vecs", lat_vecs)
+                # print("\nindices[i]", indices[i])
+                # print("\nindices[i].shape", indices[i].shape)
                 # print("\nscale.shape : ", scale.shape)
                 # print("\nxyz[i].shape : ", xyz[i].shape)
-
                 # print("\nbatch_vecs : ", batch_vecs)
                 # print("\nscale : ", scale)
                 # print("\nxyz[i] : ", xyz[i])
                 
-                # 
-                input = torch.cat([batch_vecs, scale, xyz[i]], dim=1)
+                # 合成输入
+                # input = torch.cat([batch_vecs, scale, xyz[i]], dim=1)
+                input = torch.cat([batch_vecs, xyz[i]], dim=1)
+                # print("input size = ", input.shape)
                 # input = torch.cat([batch_vecs, xyz[i]], dim=1)
 
-                # NN optimization
+                # NN optimization， 将输入放入decoder中
                 pred_sdf = decoder(input)
 
+                # 裁剪掉最大最小范围外的值
                 if enforce_minmax:
                     pred_sdf = torch.clamp(pred_sdf, minT, maxT)
 
+                # 计算平均损失
                 chunk_loss = loss_l1(pred_sdf, sdf_gt[i].cuda()) / num_sdf_samples
 
+                # 如果要进行编码正则化
                 if do_code_regularization:
                     l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1))
                     reg_loss = (
@@ -532,26 +570,24 @@ def main_function(experiment_directory, continue_from, batch_split):
                     ) / num_sdf_samples
                     chunk_loss = chunk_loss + reg_loss.cuda()
 
+                # 损失的反向传播，并且添加到块损失中
                 chunk_loss.backward()
-
                 batch_loss += chunk_loss.item()
 
             logging.debug("loss = {}".format(batch_loss))
-
             loss_log.append(batch_loss)
 
+            # 梯度范数
             if grad_clip is not None:
                 torch.nn.utils.clip_grad_norm_(decoder.parameters(), grad_clip)
-
             optimizer_all.step()
 
+        """ 计算用时, 写入日志，保存文件 """
         end = time.time()
-
         seconds_elapsed = end - start
         timing_log.append(seconds_elapsed)
         lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
         lat_mag_log.append(get_mean_latent_vector_magnitude(lat_vecs))
-
         append_parameter_magnitudes(param_mag_log, decoder)
 
         # save checkpoint's Parameters

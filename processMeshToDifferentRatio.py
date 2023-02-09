@@ -18,8 +18,8 @@ def get_meshObj_and_scale(obj_file):
 
 class Processor:
     def __init__(self) -> None:
-        self.T_deform = []
-        for i in range(6):
+        self.T_deform = [np.eye(4)]
+        for i in range(7):
             T = np.eye(4)
             for i in range(3):
                 T[i][i] *= 0.5 + 0.5 * random.random()
@@ -36,8 +36,8 @@ class Processor:
         old_mesh_filename = old_mesh_filenames[0]
         mesh, xyz_cen, xyz_scale = get_meshObj_and_scale(old_mesh_filename)
         obj_cnt = 0
-        o3d.io.write_triangle_mesh(os.path.join(new_instance_path, str(obj_cnt) + ".obj"), mesh)
-        obj_cnt += 1
+        # o3d.io.write_triangle_mesh(os.path.join(new_instance_path, str(obj_cnt) + ".obj"), mesh)
+        # obj_cnt += 1
 
 
         ds = [1 / x for x in xyz_scale]
@@ -58,8 +58,8 @@ class Processor:
 
         b = json.dumps(Trans)
 
-        o3d.io.write_triangle_mesh(os.path.join(new_instance_path, str(obj_cnt) + ".obj"), mesh)
-        obj_cnt += 1
+        # o3d.io.write_triangle_mesh(os.path.join(new_instance_path, str(obj_cnt) + ".obj"), mesh)
+        # obj_cnt += 1
 
         f2 = open(os.path.join(new_instance_path, 'Transformation.json'), 'w')
         f2.write(b)
@@ -69,12 +69,11 @@ class Processor:
         for T in self.T_deform:
             deformed_mesh = copy.deepcopy(mesh).transform(T)
             o3d.io.write_triangle_mesh(os.path.join(new_instance_path, str(obj_cnt) + ".obj"), deformed_mesh)
-            with open(os.path.join(new_instance_path, str(obj_cnt) + "_deform.txt"), "w") as f:
-                for i in range(3):
-                    f.write(str(T[i][i]))
+            # print("\n [deformed_txt] ",os.path.join(new_instance_path, str(obj_cnt) + "_deform.txt"),"\n")
+            # with open(os.path.join(new_instance_path, str(obj_cnt) + "_deform.txt"), "w") as f:
+            #     for i in range(3):
+            #         f.write(str(T[i][i]))
             obj_cnt += 1
-
-        
 
 if __name__ == "__main__":
     processor = Processor()

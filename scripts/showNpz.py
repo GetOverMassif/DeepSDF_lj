@@ -1,6 +1,7 @@
 import open3d as o3d
 import numpy as np
 import os
+from show_npz import get_npz_points
 
 def save_view_point(vis, filename = "viewpoint.json"):
     param = vis.get_view_control().convert_to_pinhole_camera_parameters()
@@ -44,7 +45,7 @@ class Visualizer:
         self.instances = []
         for dataname in dirs:
             print("dataname: ", dataname)
-            if os.path.splitext(dataname)[1] == '.obj':
+            if os.path.splitext(dataname)[1] == '.npz':
                 self.instances.append(dataname)
         self.instance_num = len(self.instances)
         self.current_idx = -1
@@ -100,12 +101,15 @@ class Visualizer:
         # file_name = os.path.join(self.file_path, self.cuModelIdx + "/model_normalized.obj")
         file_name = os.path.join(self.file_path, str(self.current_idx) + ".npz")
         # file_name = os.path.join(self.file_path, self.cuModelIdx + "/models/model_normalized.obj")
-        mesh = o3d.io.read_triangle_mesh(file_name)
+
+        gPtsIn, gPtsOut, [x1,y1,z1], [x2,y2,z2] = get_npz_points(file_name)
+        self.vis.add_geometry(gPtsIn, False)
+        self.vis.add_geometry(gPtsOut, False)
         # print(len(mesh.vertices))
-        mesh.compute_vertex_normals()
-        mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
+
+        # mesh.compute_vertex_normals()
+        # mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
         
-        self.vis.add_geometry(mesh)
         self.vis.add_geometry(self.axis)
         self.vis.add_geometry(self.cube)
 

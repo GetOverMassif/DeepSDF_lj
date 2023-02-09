@@ -169,6 +169,7 @@ class SDFSamples(torch.utils.data.Dataset):
         return len(self.npyfiles)
 
     def __getitem__(self, idx):
+        print("get item idx = %d" % idx)
         filename = os.path.join(
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
