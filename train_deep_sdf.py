@@ -490,7 +490,10 @@ def main_function(experiment_directory, continue_from, batch_split):
                 batch_vecs = lat_vecs(indices[i])
 
                 input = torch.cat([batch_vecs, xyz[i]], dim=1)
-
+                print("input size = ", input.shape)
+                
+                print("\nindices[i]", indices[i])
+                print("\nindices[i].shape", indices[i].shape)
                 # NN optimization
                 pred_sdf = decoder(input)
 

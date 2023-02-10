@@ -1,0 +1,8 @@
+input size =  torch.Size([98304, 67])
+indices[i] tensor([2246, 2246, 2246,  ...,  323,  323,  323])
+indices[i].shape torch.Size([98304])
+
+
+input size =  torch.Size([98304, 70])
+indices[i] tensor([8, 8, 8,  ..., 0, 0, 0])
+indices[i].shape torch.Size([98304])

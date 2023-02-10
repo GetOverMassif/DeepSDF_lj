@@ -340,6 +340,8 @@ def main_function(experiment_directory, continue_from, batch_split):
         data_source, train_split, ratio_per_vec, num_samp_per_scene, load_ram=False
     )
 
+    scale_vecs = sdf_dataset.scale_vecs
+
     num_data_loader_threads = get_spec_with_default(specs, "DataLoaderThreads", 1)
     logging.debug("loading data with {} threads".format(num_data_loader_threads))
 
@@ -354,7 +356,7 @@ def main_function(experiment_directory, continue_from, batch_split):
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
-    num_scenes = len(sdf_dataset)
+    num_scenes = int(len(sdf_dataset) / ratio_per_vec)
     logging.info("There are {} scenes".format(num_scenes))
     logging.debug(decoder)
 
@@ -363,11 +365,11 @@ def main_function(experiment_directory, continue_from, batch_split):
     # Embedding : 一个简单的查找表，用于存储固定字典和大小的嵌入
 
     # vecs : N * 64 , N * k * 3 -> kN * 67  (k = 8)
-
+    print("type(num_scenes) = ", type(num_scenes))
     lat_vecs_origin = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
 
-    scale_vecs = torch.tensor([[0.6,0.6,0.6]])
-    scale_vecs = scale_vecs.expand(num_scenes * ratio_per_vec, -1)
+    # scale_vecs = torch.tensor([[0.6,0.6,0.6]])
+    # scale_vecs = scale_vecs.expand(num_scenes * ratio_per_vec, -1)
 
     torch.nn.init.normal_(
         lat_vecs_origin.weight.data,
@@ -377,6 +379,7 @@ def main_function(experiment_directory, continue_from, batch_split):
 
     lat_vecs = torch.nn.Embedding(num_scenes * ratio_per_vec, latent_size + 3, max_norm=code_bound)
 
+    # print("shape0 = ", lat_vecs_origin.weight.data.shape)
     # print("shape1 = ", lat_vecs_origin.weight.data.unsqueeze(1).expand(-1,ratio_per_vec,-1).reshape(-1,latent_size).shape)
     # print("shape2 = ", scale_vecs.shape)
     
@@ -384,6 +387,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         torch.cat((lat_vecs_origin.weight.data.unsqueeze(1).expand(-1,ratio_per_vec,-1).reshape(-1,latent_size),
                   scale_vecs), 1)
 
+    # print("lat_vecs.weight.data = \n", lat_vecs.weight.data)
 
     logging.debug(
         "initialized with mean magnitude {}".format(
@@ -469,10 +473,12 @@ def main_function(experiment_directory, continue_from, batch_split):
 
     # Training cycle
     for epoch in range(start_epoch, num_epochs + 1):
-
+        
         start = time.time()
         logging.info("epoch {}...".format(epoch))
-        # 第一个周期不进行训练
+
+        print("lat_vecs.weight.data = \n", lat_vecs.weight.data)
+
         decoder.train()
 
         adjust_learning_rate(lr_schedules, optimizer_all, epoch)
@@ -482,7 +488,7 @@ def main_function(experiment_directory, continue_from, batch_split):
         # 需要处理的数据： 3217 * 16384 * (64 + 3 + 1)
         #            -> 3217 * 8 * 16384 * (64 + 3 + 3 + 1)
         for sdf_data, indices in sdf_loader:
-            print("[cnt_sdf : %d]" % cnt_sdf)
+            # print("[cnt_sdf : %d]" % cnt_sdf)
             cnt_sdf += 1
             
             # sdf_data: 
@@ -518,7 +524,8 @@ def main_function(experiment_directory, continue_from, batch_split):
 
             # 分批放入解码器训练，如分4批进行, 98304 = 24 * 16384 / 4
             for i in range(batch_split):
-                print("[batch_split : %d]" % i)
+                # print("[batch_split : %d]" % i)
+
                 batch_vecs = lat_vecs(indices[i])
 
                 # batch_vecs:  torch.Size([98304, 64])

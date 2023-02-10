@@ -1,7 +1,7 @@
 {
   "Description" : [ "This experiment learns a shape representation for chairs using data from ShapeNet version 2." ],
-  "DataSource" : "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_data",
-  "TrainSplit" : "examples/splits/sv2_chairs_train_little.json",
+  "DataSource" : "/media/lj/TOSHIBA/dataset/ShapeNet/normal_data",
+  "TrainSplit" : "examples/splits/sv2_chairs_train.json",
   "TestSplit" : "examples/splits/sv2_chairs_test.json",
   "NetworkArch" : "deep_sdf_decoder",
   "NetworkSpecs" : {
@@ -18,7 +18,7 @@
   "CodeLength" : 64,
   "NumEpochs" : 2001,
   "SnapshotFrequency" : 50,
-  "AdditionalSnapshots" : [0,1,20],
+  "AdditionalSnapshots" : [20],
   "LearningRateSchedule" : [
     {
         "Type" : "Step",

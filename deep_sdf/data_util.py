@@ -36,9 +36,15 @@ def get_instance_filenames(data_source, split, ratio_per_vec):
                             "Requested non-existent file '{}' or '{}'".format(instance_filename, instance_txtname)
                         )
                     npzfiles += [instance_filename]
-                    txtfiles += [instance_txtname]
+                    txtfiles += [os.path.join(data_source, ws.sdf_samples_subdir, instance_txtname)]
     return npzfiles, txtfiles
 
+def get_instance_scales(txtfiles):
+    files_num = len(txtfiles)
+    scales_np = np.zeros((files_num, 3), dtype = np.float32)
+    for i in range(files_num):
+        scales_np[i] = np.loadtxt(txtfiles[i], dtype = np.float32)[:3]
+    return torch.from_numpy(scales_np)
 
 class NoMeshFileError(RuntimeError):
     """Raised when a mesh file is not found in a shape directory"""
@@ -153,6 +159,8 @@ class SDFSamples(torch.utils.data.Dataset):
         self.data_source = data_source
         self.npyfiles, self.txtfiles = get_instance_filenames(data_source, split, ratio_per_vec)
 
+        self.scale_vecs = get_instance_scales(self.txtfiles)
+
         logging.debug(
             "using "
             + str(len(self.npyfiles))
@@ -178,7 +186,7 @@ class SDFSamples(torch.utils.data.Dataset):
                 )
 
     def __len__(self):
-        print("measure len = ", len(self.npyfiles))
+        # print("measure len = ", len(self.npyfiles))
         return len(self.npyfiles)
 
     def __getitem__(self, idx):
