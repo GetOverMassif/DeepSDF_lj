@@ -16,11 +16,11 @@ set(SOURCES
 src/ShaderProgram.cpp
 src/Utils.cpp)
 
-# add_executable(PreprocessMeshMy src/PreprocessMesh_my.cpp ${SOURCES})
-# target_include_directories(PreprocessMeshMy PRIVATE third-party/cnpy )
-# target_link_libraries(PreprocessMeshMy PRIVATE CLI11::CLI11 pango_core pango_display pango_geometry pango_glgeometry GLEW cnpy Eigen3::Eigen nanoflann::nanoflann)
-# target_compile_features(PreprocessMeshMy PRIVATE cxx_std_17)
-# set_target_properties(PreprocessMeshMy PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
+# add_executable(PreprocessMeshToNormal src/PreprocessMeshToNormal.cpp ${SOURCES})
+# target_include_directories(PreprocessMeshToNormal PRIVATE third-party/cnpy)
+# target_link_libraries(PreprocessMeshToNormal PRIVATE CLI11::CLI11 pangolin cnpy Eigen3::Eigen nanoflann::nanoflann Threads::Threads)
+# target_compile_features(PreprocessMeshToNormal PRIVATE cxx_std_14)
+# set_target_properties(PreprocessMeshToNormal PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 add_executable(PreprocessMesh src/PreprocessMesh.cpp ${SOURCES})
 target_include_directories(PreprocessMesh PRIVATE third-party/cnpy)

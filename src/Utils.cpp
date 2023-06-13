@@ -3,6 +3,7 @@
 #include "Utils.h"
 
 #include <random>
+#include <cmath>
 
 std::vector<Eigen::Vector3f> EquiDistPointsOnSphere(const uint numSamples, const float radius) {
   std::vector<Eigen::Vector3f> points(numSamples);
@@ -167,6 +168,8 @@ std::pair<Eigen::Vector3f, float> ComputeNormalizationParameters(
   return {-1 * center, (1.f / maxDistance)};
 }
 
+
+// 将模型(单尺度)缩放到单位球体内
 float BoundingCubeNormalization(
     pangolin::Geometry& geom,
     bool fitToUnitSphere,
@@ -239,6 +242,79 @@ float BoundingCubeNormalization(
     }
     maxDistance = 1;
   }
+
+  return maxDistance;
+}
+
+// 将模型(三尺度)缩放到单位球体内
+float BoundingCubeNormalization3D(
+    pangolin::Geometry& geom,
+    bool fitToUnitSphere,
+    const float buffer) {
+  float xMin = 1000000, xMax = -1000000, yMin = 1000000, yMax = -1000000, zMin = 1000000,
+        zMax = -1000000;
+
+  pangolin::Image<float> vertices =
+      pangolin::get<pangolin::Image<float>>(geom.buffers["geometry"].attributes["vertex"]);
+
+  const std::size_t numVertices = vertices.h;
+
+  ///////// Only consider vertices that were used in some face
+  std::vector<unsigned char> verticesUsed(numVertices, 0);
+  // turn to true if the vertex is used
+  for (const auto& object : geom.objects) {
+    auto itVertIndices = object.second.attributes.find("vertex_indices");
+    if (itVertIndices != object.second.attributes.end()) {
+      pangolin::Image<uint32_t> ibo =
+          pangolin::get<pangolin::Image<uint32_t>>(itVertIndices->second);
+
+      for (uint i = 0; i < ibo.h; ++i) {
+        for (uint j = 0; j < 3; ++j) {
+          verticesUsed[ibo(j, i)] = 1;
+        }
+      }
+    }
+  }
+  /////////
+
+  // compute min max in each dimension
+  for (size_t i = 0; i < numVertices; i++) {
+    // pass when it's not used.
+    if (verticesUsed[i] == 0)
+      continue;
+    xMin = fmin(xMin, vertices(0, i));
+    yMin = fmin(yMin, vertices(1, i));
+    zMin = fmin(zMin, vertices(2, i));
+    xMax = fmax(xMax, vertices(0, i));
+    yMax = fmax(yMax, vertices(1, i));
+    zMax = fmax(zMax, vertices(2, i));
+  }
+
+  const float xCenter = (xMax + xMin) / 2.0f;
+  const float yCenter = (yMax + yMin) / 2.0f;
+  const float zCenter = (zMax + zMin) / 2.0f;
+
+  const float xScale = xMax - xMin;
+  const float yScale = yMax - yMin;
+  const float zScale = zMax - zMin;
+
+  const float cube_side = 2.0f / sqrt(3.0f);
+
+  const float xScaleFactor = buffer * cube_side / xScale;
+  const float yScaleFactor = buffer * cube_side / yScale;
+  const float zScaleFactor = buffer * cube_side / zScale;
+
+  // make the mean zero
+  float maxDistance = -1.0f;
+  for (size_t i = 0; i < numVertices; i++) {
+    // pass when it's not used.
+    if (verticesUsed[i] == false)
+      continue;
+    vertices(0, i) = (vertices(0, i) - xCenter) * xScaleFactor;
+    vertices(1, i) = (vertices(1, i) - yCenter) * yScaleFactor;
+    vertices(2, i) = (vertices(2, i) - zCenter) * zScaleFactor;
+  }
+  maxDistance = 1;
 
   return maxDistance;
 }

@@ -17,8 +17,7 @@ CLASS=chairs
 # 指令的其他参数：--threads 默认为8
 # 用时：48个instance，用了6.93s
 
-
-python $DEEPSDF/usage/preprocess_data.py --data_dir $DATA_DIR --source $SHAPENET/ShapeNetCore.v2/ --name ShapeNetV2 --split examples/splits/sv2_$CLASS\_train_little.json --skip
+python $DEEPSDF/usage/preprocess_data.py --data_dir $DATA_DIR --source $SHAPENET/ShapeNetCore.v2/ --name ShapeNetV2 --split $DEEPSDF/examples/splits/sv2_$CLASS\_train_little.json --skip
 
 # train the model
 # 这里指定了迭代优化的模型存储的位置，同时，这个文件夹下面的

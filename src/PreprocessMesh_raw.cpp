@@ -18,8 +18,6 @@
 
 #include "Utils.h"
 
-#include <ctime>
-
 extern pangolin::GlSlProgram GetShaderProgram();
 
 void SampleFromSurface(
@@ -282,12 +280,6 @@ void writeSDFToPLY(
 }
 
 int main(int argc, char** argv) {
-  clock_t start_total = clock();
-  clock_t start_prepare = clock();
-  std::cout << "Processing ";
-  for (int i = 0; i < argc; i++)
-    std::cout << argv[i] << " ";
-  std::cout << std::endl;
   std::string meshFileName;
   bool vis = false;
 
@@ -302,8 +294,6 @@ int main(int argc, char** argv) {
   float rejection_criteria_tri = 0.03f;
   float num_samp_near_surf_ratio = 47.0f / 50.0f;
 
-  bool scale3D = false;
-
   CLI::App app{"PreprocessMesh"};
   app.add_option("-m", meshFileName, "Mesh File Name for Reading")->required();
   app.add_flag("-v", vis, "enable visualization");
@@ -314,7 +304,6 @@ int main(int argc, char** argv) {
   app.add_flag("--sply", save_ply, "save ply point cloud for visualization");
   app.add_flag("-t", test_flag, "test_flag");
   app.add_option("-n", spatial_samples_npz, "spatial samples from file");
-  app.add_flag("-x", scale3D, "scaling the mesh points by 1D or 3D");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -336,14 +325,12 @@ int main(int argc, char** argv) {
   glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
   glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
-  // 读取mesh文件
   pangolin::Geometry geom = pangolin::LoadGeometry(meshFileName);
 
   std::cout << geom.objects.size() << " objects" << std::endl;
 
   // linearize the object indices
   {
-    // 计算面的数量
     int total_num_faces = 0;
 
     for (const auto& object : geom.objects) {
@@ -355,7 +342,8 @@ int main(int argc, char** argv) {
         total_num_faces += ibo.h;
       }
     }
-    // const int total_num_indices = total_num_faces * 3;
+
+    //      const int total_num_indices = total_num_faces * 3;
     pangolin::ManagedImage<uint8_t> new_buffer(3 * sizeof(uint32_t), total_num_faces);
 
     pangolin::Image<uint32_t> new_ibo =
@@ -386,32 +374,15 @@ int main(int argc, char** argv) {
     new_ibo = faces->second.UnsafeReinterpret<uint32_t>().SubImage(0, 0, 3, total_num_faces);
     faces->second.attributes["vertex_indices"] = new_ibo;
   }
+
   // remove textures
   geom.textures.clear();
 
   pangolin::Image<uint32_t> modelFaces = pangolin::get<pangolin::Image<uint32_t>>(
       geom.objects.begin()->second.attributes["vertex_indices"]);
-  clock_t end_prepare = clock();
-  double duration_prepare = static_cast<double>(end_prepare - start_prepare) / CLOCKS_PER_SEC;
-  std::cout << "归一化之前时间: " << duration_prepare << " 秒" << std::endl;
 
-  /** 
-   * KEY: 在这里将图形的顶点坐标都转换到了[-1,1]的的规范包围盒内
-   */
-  float max_dist = 1.0f;
-  clock_t start_normalize = clock();
-  if (scale3D)
-    max_dist = BoundingCubeNormalization3D(geom, true);
-  else
-    max_dist = BoundingCubeNormalization(geom, true);
-  clock_t end_normalize = clock();
-  double duration_normalize = static_cast<double>(end_normalize - start_normalize) / CLOCKS_PER_SEC;
-  std::cout << "规范化时间: " << duration_normalize << " 秒" << std::endl;
+  float max_dist = BoundingCubeNormalization(geom, true);
 
-  /**
-   * things after normalize
-  */
-  clock_t start_pangolin = clock();
   if (vis)
     pangolin::CreateWindowAndBind("Main", 640, 480);
   else
@@ -426,6 +397,7 @@ int main(int argc, char** argv) {
   glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
   glDisable(GL_MULTISAMPLE_ARB);
   glShadeModel(GL_FLAT);
+
   // Define Projection and initial ModelView matrix
   pangolin::OpenGlRenderState s_cam(
       //                pangolin::ProjectionMatrix(640,480,420,420,320,240,0.05,100),
@@ -437,32 +409,36 @@ int main(int argc, char** argv) {
 
   // Create Interactive View in window
   pangolin::Handler3D handler(s_cam);
+
   pangolin::GlGeometry gl_geom = pangolin::ToGlGeometry(geom);
+
   pangolin::GlSlProgram prog = GetShaderProgram();
-//   if (vis) {
-//     pangolin::View& d_cam = pangolin::CreateDisplay()
-//                                 .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f / 480.0f)
-//                                 .SetHandler(&handler);
 
-//     while (!pangolin::ShouldQuit()) {
-//       // Clear screen and activate view to render into
-//       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//       //        glEnable(GL_CULL_FACE);
-//       //        glCullFace(GL_FRONT);
+  if (vis) {
+    pangolin::View& d_cam = pangolin::CreateDisplay()
+                                .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f / 480.0f)
+                                .SetHandler(&handler);
 
-//       d_cam.Activate(s_cam);
+    while (!pangolin::ShouldQuit()) {
+      // Clear screen and activate view to render into
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      //        glEnable(GL_CULL_FACE);
+      //        glCullFace(GL_FRONT);
 
-//       prog.Bind();
-//       prog.SetUniform("MVP", s_cam.GetProjectionModelViewMatrix());
-//       prog.SetUniform("V", s_cam.GetModelViewMatrix());
+      d_cam.Activate(s_cam);
 
-//       pangolin::GlDraw(prog, gl_geom, nullptr);
-//       prog.Unbind();
+      prog.Bind();
+      prog.SetUniform("MVP", s_cam.GetProjectionModelViewMatrix());
+      prog.SetUniform("V", s_cam.GetModelViewMatrix());
 
-//       // Swap frames and Process Events
-//       pangolin::FinishFrame();
-//     }
-//   }
+      pangolin::GlDraw(prog, gl_geom, nullptr);
+      prog.Unbind();
+
+      // Swap frames and Process Events
+      pangolin::FinishFrame();
+    }
+  }
+
   // Create Framebuffer with attached textures
   size_t w = 400;
   size_t h = 400;
@@ -534,14 +510,7 @@ int main(int argc, char** argv) {
     std::cout << "mesh rejected" << std::endl;
     //    return 0;
   }
-  clock_t end_pangolin = clock();
-  double duration_pangolin = static_cast<double>(end_pangolin - start_pangolin) / CLOCKS_PER_SEC;
-  std::cout << "归一化之后时间: " << duration_pangolin << " 秒" << std::endl;
 
-  /**
-   * Build KD tree
-  */
-  clock_t start_kd = clock();
   std::vector<Eigen::Vector3f> vertices2;
   //    std::vector<Eigen::Vector3f> vertices_all;
   std::vector<Eigen::Vector3f> normals2;
@@ -560,16 +529,8 @@ int main(int argc, char** argv) {
   std::vector<float> sdf;
   int num_samp_near_surf = (int)(47 * num_sample / 50);
   std::cout << "num_samp_near_surf: " << num_samp_near_surf << std::endl;
-  clock_t end_kd = clock();
-  double duration_kd = static_cast<double>(end_kd - start_kd) / CLOCKS_PER_SEC;
-  std::cout << "kd树时间: " << duration_kd << " 秒" << std::endl;
-
-  /**
-   * Sample points from or near surface
-  */
-  clock_t start_sample = clock();
   SampleFromSurface(geom, xyz_surf, num_samp_near_surf / 2);
-  clock_t time_sample2 = clock();
+
   auto start = std::chrono::high_resolution_clock::now();
   SampleSDFNearSurface(
       kdTree_surf,
@@ -583,21 +544,11 @@ int main(int argc, char** argv) {
       second_variance,
       2,
       11);
-  clock_t end_sample = clock();
-  double duration_sample1 = static_cast<double>(time_sample2 - start_sample) / CLOCKS_PER_SEC;
-  double duration_sample2 = static_cast<double>(end_sample - time_sample2) / CLOCKS_PER_SEC;
-  std::cout << "采样1时间: " << duration_sample1 << " 秒" << std::endl;
-  std::cout << "采样2时间: " << duration_sample2 << " 秒" << std::endl;
-
 
   auto finish = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(finish - start).count();
-  std::cout << "elapsed = " << elapsed << std::endl;
+  std::cout << elapsed << std::endl;
 
-  /**
-   * save to file
-  */
-  clock_t start_save = clock();
   if (save_ply) {
     writeSDFToPLY(xyz, sdf, plyFileNameOut, false, true);
   }
@@ -609,13 +560,6 @@ int main(int argc, char** argv) {
   else {
     writeSDFToNPZ(xyz, sdf, npyFileName, true);
   }
-  clock_t end_save = clock();
-  double duration_save = static_cast<double>(end_save - start_save) / CLOCKS_PER_SEC;
-  std::cout << "保存文件时间: " << duration_save << " 秒" << std::endl;
 
-  clock_t end_total = clock();
-  double duration_total = static_cast<double>(end_total - start_total) / CLOCKS_PER_SEC;
-  std::cout << "总执行时间: " << duration_total << " 秒" << std::endl;
-  
   return 0;
 }

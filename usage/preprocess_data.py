@@ -54,6 +54,8 @@ def process_mesh(mesh_filepath, target_filepath, executable, additional_args):
     logging.info(mesh_filepath + " --> " + target_filepath)
     command = [executable, "-m", mesh_filepath, "-o", target_filepath] + additional_args
 
+    print(f"command = {command}")
+
     subproc = subprocess.Popen(command, stdout=subprocess.DEVNULL)
     subproc.wait()
 
@@ -150,6 +152,14 @@ if __name__ == "__main__":
         help = "If set, the script will produce mesh surface samples for evaluation. "
         + "Otherwise, the script will produce SDF samples for training.",
     )
+    arg_parser.add_argument(
+        "--scale3d",
+        "-3d",
+        dest = "scale3d",
+        default = False,
+        action = "store_true",
+        help = "If set, the mesh will be scaled by 3 dimensions.",
+    )
 
     deep_sdf.add_common_args(arg_parser)
 
@@ -173,6 +183,9 @@ if __name__ == "__main__":
 
         if args.test_sampling:
             additional_general_args += ["-t"]
+        if args.scale3d:
+            additional_general_args += ["-x"]
+        
     # 打开划分文件
     with open(args.split_filename, "r") as f:
         split = json.load(f)

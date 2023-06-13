@@ -1,8 +1,8 @@
 {
   "Description" : [ "This experiment learns a shape representation for chairs ",
                     "using data from ShapeNet version 2." ],
-  "DataSource" : "data",
-  "TrainSplit" : "examples/splits/sv2_chairs_train.json",
+  "DataSource" : "/media/lj/TOSHIBA/dataset/ShapeNet/data",
+  "TrainSplit" : "examples/splits/sv2_chairs_train_part.json",
   "TestSplit" : "examples/splits/sv2_chairs_test.json",
   "NetworkArch" : "deep_sdf_decoder",
   "NetworkSpecs" : {

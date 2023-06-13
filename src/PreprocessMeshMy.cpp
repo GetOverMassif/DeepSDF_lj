@@ -380,7 +380,7 @@ int main(int argc, char** argv) {
 
     int index = 0;
 
-    // 遍历网格中的多个物体
+    // 遍历网格模型中的多个物体
     for (const auto& object : geom.objects) {
       auto it_vert_indices = object.second.attributes.find("vertex_indices");
       if (it_vert_indices != object.second.attributes.end()) {
