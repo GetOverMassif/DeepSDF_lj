@@ -515,7 +515,7 @@ int main(int argc, char** argv) {
     prog.SetUniform("V", s_cam2.GetModelViewMatrix());
     prog.SetUniform("ToWorld", s_cam2.GetModelViewMatrix().Inverse());
     prog.SetUniform("slant_thr", -1.0f, 1.0f);
-    prog.SetUniform("ttt", 1.0, 0, 0, 1);
+    prog.SetUniform("ttt", 1.0, 0.0, 0.0, 1.0);
     pangolin::GlDraw(prog, gl_geom, nullptr);
     prog.Unbind();
 

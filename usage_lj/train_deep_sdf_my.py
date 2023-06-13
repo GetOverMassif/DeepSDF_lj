@@ -329,7 +329,7 @@ def main_function(experiment_directory, continue_from, batch_split):
     with open(train_split_file, "r") as f:
         train_split = json.load(f)
     
-    ratio_per_vec = specs["RatioPerScene"]
+    # ratio_per_vec = specs["RatioPerScene"]
 
     # SDFSamples(数据源、训练集划分、各场景采样数、是否加载ram)
     # sdf_dataset = deep_sdf.data.SDFSamples(
@@ -337,7 +337,7 @@ def main_function(experiment_directory, continue_from, batch_split):
     # )
 
     sdf_dataset = deep_sdf.data_util.SDFSamples(
-        data_source, train_split, ratio_per_vec, num_samp_per_scene, load_ram=False
+        data_source, train_split, num_samp_per_scene, load_ram=False
     )
 
     scale_vecs = sdf_dataset.scale_vecs

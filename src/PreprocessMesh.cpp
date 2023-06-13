@@ -34,8 +34,7 @@ void SampleFromSurface(
     auto it_vert_indices = object.second.attributes.find("vertex_indices");
     if (it_vert_indices != object.second.attributes.end()) {
       pangolin::Image<uint32_t> ibo =
-          std::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
-        //   pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
+          pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
 
       for (int i = 0; i < ibo.h; ++i) {
         linearized_faces.emplace_back(ibo(0, i), ibo(1, i), ibo(2, i));
@@ -44,8 +43,7 @@ void SampleFromSurface(
   }
 
   pangolin::Image<float> vertices =
-      std::get<pangolin::Image<float>>(geom.buffers["geometry"].attributes["vertex"]);
-    //   pangolin::get<pangolin::Image<float>>(geom.buffers["geometry"].attributes["vertex"]);
+      pangolin::get<pangolin::Image<float>>(geom.buffers["geometry"].attributes["vertex"]);
 
   for (const Eigen::Vector3i& face : linearized_faces) {
     float area = TriangleArea(
@@ -107,12 +105,11 @@ void SampleSDFNearSurface(
   std::vector<Eigen::Vector3f> second_samples;
 
   std::random_device rd;
-  std::mt19937 rng(rd());  // 伪随机数产生器
+  std::mt19937 rng(rd());
   std::uniform_int_distribution<int> vert_ind(0, vertices.size() - 1);
   std::normal_distribution<float> perterb_norm(0, stdv);
   std::normal_distribution<float> perterb_second(0, sqrt(second_variance));
 
-  // 遍历表面点
   for (unsigned int i = 0; i < xyz_surf.size(); i++) {
     Eigen::Vector3f surface_p = xyz_surf[i];
     Eigen::Vector3f samp1 = surface_p;
@@ -127,7 +124,6 @@ void SampleSDFNearSurface(
     xyz.push_back(samp2);
   }
 
-  // 需要随机采样的数量
   for (int s = 0; s < (int)(num_rand_samples); s++) {
     xyz.push_back(Eigen::Vector3f(
         rand_dist(generator) * bounding_cube_dim - bounding_cube_dim / 2,
@@ -136,7 +132,6 @@ void SampleSDFNearSurface(
   }
 
   // now compute sdf for each xyz sample
-  // 现在计算每个xyz采样点的SDF值
   for (int s = 0; s < (int)xyz.size(); s++) {
     Eigen::Vector3f samp_vert = xyz[s];
     std::vector<int> cl_indices(num_votes);
@@ -146,7 +141,6 @@ void SampleSDFNearSurface(
     int num_pos = 0;
     float sdf;
 
-    // 投票表决采样点在物体形状内还是外
     for (int ind = 0; ind < num_votes; ind++) {
       uint32_t cl_ind = cl_indices[ind];
       Eigen::Vector3f cl_vert = vertices[cl_ind];
@@ -155,20 +149,18 @@ void SampleSDFNearSurface(
 
       if (ind == 0) {
         // if close to the surface, use point plane distance
-        // 如果靠近表面，使用点面距离，否则直接使用向量长度
         if (ray_vec_leng < stdv)
           sdf = fabs(normals[cl_ind].dot(ray_vec));
         else
           sdf = ray_vec_leng;
       }
-      
+
       float d = normals[cl_ind].dot(ray_vec / ray_vec_leng);
       if (d > 0)
         num_pos++;
     }
 
     // all or nothing , else ignore the point
-    // 当投票一致认为在形状外或形状内时，添加该采样点及SDF值
     if ((num_pos == 0) || (num_pos == num_votes)) {
       xyz_used.push_back(samp_vert);
       if (num_pos <= (num_votes / 2)) {
@@ -177,6 +169,7 @@ void SampleSDFNearSurface(
       sdfs.push_back(sdf);
     }
   }
+
   xyz = xyz_used;
 }
 
@@ -302,9 +295,9 @@ int main(int argc, char** argv) {
   float num_samp_near_surf_ratio = 47.0f / 50.0f;
 
   CLI::App app{"PreprocessMesh"};
-  app.add_option("-m", meshFileName, "Mesh File Name for Reading")->required();  // Mesh file
+  app.add_option("-m", meshFileName, "Mesh File Name for Reading")->required();
   app.add_flag("-v", vis, "enable visualization");
-  app.add_option("-o", npyFileName, "Save npy pc to here")->required();  // npy file path
+  app.add_option("-o", npyFileName, "Save npy pc to here")->required();
   app.add_option("--ply", plyFileNameOut, "Save ply pc to here");
   app.add_option("-s", num_sample, "Save ply pc to here");
   app.add_option("--var", variance, "Set Variance");
@@ -337,7 +330,6 @@ int main(int argc, char** argv) {
   std::cout << geom.objects.size() << " objects" << std::endl;
 
   // linearize the object indices
-  // 线性化物体索引
   {
     int total_num_faces = 0;
 
@@ -345,14 +337,13 @@ int main(int argc, char** argv) {
       auto it_vert_indices = object.second.attributes.find("vertex_indices");
       if (it_vert_indices != object.second.attributes.end()) {
         pangolin::Image<uint32_t> ibo =
-            std::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
-            // pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
+            pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
 
         total_num_faces += ibo.h;
       }
     }
 
-    // const int total_num_indices = total_num_faces * 3;
+    //      const int total_num_indices = total_num_faces * 3;
     pangolin::ManagedImage<uint8_t> new_buffer(3 * sizeof(uint32_t), total_num_faces);
 
     pangolin::Image<uint32_t> new_ibo =
@@ -360,13 +351,11 @@ int main(int argc, char** argv) {
 
     int index = 0;
 
-    // 遍历网格中的多个物体
     for (const auto& object : geom.objects) {
       auto it_vert_indices = object.second.attributes.find("vertex_indices");
       if (it_vert_indices != object.second.attributes.end()) {
         pangolin::Image<uint32_t> ibo =
-            std::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
-            // pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
+            pangolin::get<pangolin::Image<uint32_t>>(it_vert_indices->second);
 
         for (int i = 0; i < ibo.h; ++i) {
           new_ibo.Row(index).CopyFrom(ibo.Row(i));
@@ -387,14 +376,11 @@ int main(int argc, char** argv) {
   }
 
   // remove textures
-  // 移除纹理
   geom.textures.clear();
 
-  // pangolin::Image<uint32_t> modelFaces = pangolin::get<pangolin::Image<uint32_t>>(
-  pangolin::Image<uint32_t> modelFaces = std::get<pangolin::Image<uint32_t>>(
+  pangolin::Image<uint32_t> modelFaces = pangolin::get<pangolin::Image<uint32_t>>(
       geom.objects.begin()->second.attributes["vertex_indices"]);
 
-  // Bound cube into normalization space
   float max_dist = BoundingCubeNormalization(geom, true);
 
   if (vis)
@@ -413,9 +399,8 @@ int main(int argc, char** argv) {
   glShadeModel(GL_FLAT);
 
   // Define Projection and initial ModelView matrix
-  // 定义 投影 和 初始的ModelView矩阵
   pangolin::OpenGlRenderState s_cam(
-      // pangolin::ProjectionMatrix(640,480,420,420,320,240,0.05,100),
+      //                pangolin::ProjectionMatrix(640,480,420,420,320,240,0.05,100),
       pangolin::ProjectionMatrixOrthographic(-max_dist, max_dist, -max_dist, max_dist, 0, 2.5),
       pangolin::ModelViewLookAt(0, 0, -1, 0, 0, 0, pangolin::AxisY));
   pangolin::OpenGlRenderState s_cam2(
@@ -423,7 +408,6 @@ int main(int argc, char** argv) {
       pangolin::ModelViewLookAt(0, 0, -1, 0, 0, 0, pangolin::AxisY));
 
   // Create Interactive View in window
-  // 在窗口中创建交互式视图
   pangolin::Handler3D handler(s_cam);
 
   pangolin::GlGeometry gl_geom = pangolin::ToGlGeometry(geom);
@@ -438,8 +422,8 @@ int main(int argc, char** argv) {
     while (!pangolin::ShouldQuit()) {
       // Clear screen and activate view to render into
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // glEnable(GL_CULL_FACE);
-      // glCullFace(GL_FRONT);
+      //        glEnable(GL_CULL_FACE);
+      //        glCullFace(GL_FRONT);
 
       d_cam.Activate(s_cam);
 
@@ -456,7 +440,6 @@ int main(int argc, char** argv) {
   }
 
   // Create Framebuffer with attached textures
-  // 创建带有附加纹理的Framebuffer
   size_t w = 400;
   size_t h = 400;
   pangolin::GlRenderBuffer zbuffer(w, h, GL_DEPTH_COMPONENT32);
@@ -465,7 +448,6 @@ int main(int argc, char** argv) {
   pangolin::GlFramebuffer framebuffer(vertices, normals, zbuffer);
 
   // View points around a sphere.
-  // 观察球体周围的点
   std::vector<Eigen::Vector3f> views = EquiDistPointsOnSphere(100, max_dist * 1.1);
 
   std::vector<Eigen::Vector4f> point_normals;
@@ -530,7 +512,7 @@ int main(int argc, char** argv) {
   }
 
   std::vector<Eigen::Vector3f> vertices2;
-  // std::vector<Eigen::Vector3f> vertices_all;
+  //    std::vector<Eigen::Vector3f> vertices_all;
   std::vector<Eigen::Vector3f> normals2;
 
   for (unsigned int v = 0; v < point_verts.size(); v++) {
@@ -538,7 +520,7 @@ int main(int argc, char** argv) {
     normals2.push_back(point_normals[v].head<3>());
   }
 
-  KdVertexList kdVerts(vertices2);  // create with points
+  KdVertexList kdVerts(vertices2);
   KdVertexListTree kdTree_surf(3, kdVerts);
   kdTree_surf.buildIndex();
 
@@ -550,19 +532,18 @@ int main(int argc, char** argv) {
   SampleFromSurface(geom, xyz_surf, num_samp_near_surf / 2);
 
   auto start = std::chrono::high_resolution_clock::now();
-  // 在表面附近进行SDF采样
   SampleSDFNearSurface(
-      kdTree_surf,  
-      vertices2,  // 角点
-      xyz_surf,  // 表面点的xyz坐标
-      normals2,  // 点的法线方向
-      xyz,  // 采样后的点坐标
-      sdf,  // 采样后的SDF值
-      num_sample - num_samp_near_surf,  // 需要采样的点数量
-      variance,  // 
-      second_variance,  
-      2,  // SDF采样空间
-      11);  
+      kdTree_surf,
+      vertices2,
+      xyz_surf,
+      normals2,
+      xyz,
+      sdf,
+      num_sample - num_samp_near_surf,
+      variance,
+      second_variance,
+      2,
+      11);
 
   auto finish = std::chrono::high_resolution_clock::now();
   auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(finish - start).count();
@@ -579,5 +560,6 @@ int main(int argc, char** argv) {
   else {
     writeSDFToNPZ(xyz, sdf, npyFileName, true);
   }
+
   return 0;
 }

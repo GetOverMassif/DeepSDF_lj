@@ -21,9 +21,7 @@ def filter_classes_glob(patterns, classes):
         passed_classes = passed_classes.union(
             set(filter(lambda x: fnmatch.fnmatch(x, pattern), classes))
         )
-
     return list(passed_classes)
-
 
 def filter_classes_regex(patterns, classes):
     import re

@@ -8,6 +8,8 @@ import numpy as np
 import os
 import trimesh
 
+
+
 import deep_sdf
 import deep_sdf.workspace as ws
 

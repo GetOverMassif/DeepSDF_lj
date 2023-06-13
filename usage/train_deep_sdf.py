@@ -11,6 +11,9 @@ import math
 import json
 import time
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import deep_sdf
 import deep_sdf.workspace as ws
 
@@ -490,10 +493,10 @@ def main_function(experiment_directory, continue_from, batch_split):
                 batch_vecs = lat_vecs(indices[i])
 
                 input = torch.cat([batch_vecs, xyz[i]], dim=1)
-                print("input size = ", input.shape)
+                # print("input size = ", input.shape)
                 
-                print("\nindices[i]", indices[i])
-                print("\nindices[i].shape", indices[i].shape)
+                # print("\nindices[i]", indices[i])
+                # print("\nindices[i].shape", indices[i].shape)
                 # NN optimization
                 pred_sdf = decoder(input)
 

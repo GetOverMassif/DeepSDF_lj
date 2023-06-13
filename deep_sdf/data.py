@@ -55,16 +55,6 @@ def find_mesh_in_directory(shape_dir):
         raise MultipleMeshFileError()
     return mesh_filenames[0]
 
-def find_meshes_in_directory(shape_dir):
-    mesh_filenames = list(glob.iglob(shape_dir + "/**/*.obj")) + list(
-        glob.iglob(shape_dir + "/*.obj")
-    )
-    if len(mesh_filenames) == 0:
-        raise NoMeshFileError()
-    # elif len(mesh_filenames) > 1:
-    #     raise MultipleMeshFileError()
-    return mesh_filenames
-
 
 def remove_nans(tensor):
     tensor_nan = torch.isnan(tensor[:, 3])
@@ -169,7 +159,6 @@ class SDFSamples(torch.utils.data.Dataset):
         return len(self.npyfiles)
 
     def __getitem__(self, idx):
-        print("get item idx = %d" % idx)
         filename = os.path.join(
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )

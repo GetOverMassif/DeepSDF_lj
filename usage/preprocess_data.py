@@ -8,8 +8,13 @@ import logging
 import os
 import subprocess
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import deep_sdf
 import deep_sdf.workspace as ws
+
+import time
 
 
 def filter_classes_glob(patterns, classes):
@@ -82,7 +87,7 @@ def append_data_source_map(data_dir, name, source):
 
 
 if __name__ == "__main__":
-
+    t1 = time.time()
     arg_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description = "Pre-processes data from a data source and append the results to "
@@ -201,6 +206,10 @@ if __name__ == "__main__":
 
     meshes_targets_and_specific_args = []
 
+    time_prepare = time.time() - t1
+    t1 = time.time()
+    instance_sum = 0
+
     # 03001627
     for class_dir in class_directories:
         class_path = os.path.join(args.source_dir, class_dir)
@@ -214,6 +223,8 @@ if __name__ == "__main__":
 
         if not os.path.isdir(target_dir):
             os.mkdir(target_dir)
+
+        instance_sum += len(instance_dirs)
 
         for instance_dir in instance_dirs:
 
@@ -272,3 +283,7 @@ if __name__ == "__main__":
             )
 
         executor.shutdown()
+    
+    time_process = time.time() - t1
+    print(f"Preparing costs {time_prepare}s")
+    print(f"Processing {instance_sum} meshes cost {time_process}s")

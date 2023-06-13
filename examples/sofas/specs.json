@@ -1,6 +1,7 @@
 {
-  "Description" : [ "This experiment learns a shape representation for sofas using data from ShapeNet version 2." ],
-  "DataSource" : "/media/lj/TOSHIBA/dataset/ShapeNet/data",
+  "Description" : [ "This experiment learns a shape representation for sofas ",
+                    "using data from ShapeNet version 2." ],
+  "DataSource" : "data",
   "TrainSplit" : "examples/splits/sv2_sofas_train.json",
   "TestSplit" : "examples/splits/sv2_sofas_test.json",
   "NetworkArch" : "deep_sdf_decoder",
@@ -15,9 +16,9 @@
     "latent_dropout" : false,
     "weight_norm" : true
     },
-  "CodeLength" : 64,
-  "NumEpochs" : 10,
-  "SnapshotFrequency" : 250,
+  "CodeLength" : 256,
+  "NumEpochs" : 2001,
+  "SnapshotFrequency" : 1000,
   "AdditionalSnapshots" : [ 100, 500 ],
   "LearningRateSchedule" : [
     {
@@ -33,7 +34,7 @@
       "Factor" : 0.5
     }],
   "SamplesPerScene" : 16384,
-  "ScenesPerBatch" : 32,
+  "ScenesPerBatch" : 64,
   "DataLoaderThreads" : 16,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,

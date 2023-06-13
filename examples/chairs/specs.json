@@ -1,7 +1,8 @@
 {
-  "Description" : [ "This experiment learns a shape representation for chairs using data from ShapeNet version 2." ],
-  "DataSource" : "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_data",
-  "TrainSplit" : "examples/splits/sv2_chairs_train_little.json",
+  "Description" : [ "This experiment learns a shape representation for chairs ",
+                    "using data from ShapeNet version 2." ],
+  "DataSource" : "data",
+  "TrainSplit" : "examples/splits/sv2_chairs_train.json",
   "TestSplit" : "examples/splits/sv2_chairs_test.json",
   "NetworkArch" : "deep_sdf_decoder",
   "NetworkSpecs" : {
@@ -15,16 +16,16 @@
     "latent_dropout" : false,
     "weight_norm" : true
     },
-  "CodeLength" : 64,
+  "CodeLength" : 256,
   "NumEpochs" : 2001,
-  "SnapshotFrequency" : 50,
-  "AdditionalSnapshots" : [0,1,20],
+  "SnapshotFrequency" : 1000,
+  "AdditionalSnapshots" : [ 100, 500 ],
   "LearningRateSchedule" : [
     {
-        "Type" : "Step",
-        "Initial" : 0.0005,
-        "Interval" : 500,
-        "Factor" : 0.5
+      "Type" : "Step",
+      "Initial" : 0.0005,
+      "Interval" : 500,
+      "Factor" : 0.5
     },
     {
       "Type" : "Step",
@@ -32,10 +33,9 @@
       "Interval" : 500,
       "Factor" : 0.5
     }],
-  "RatioPerScene": 8,
   "SamplesPerScene" : 16384,
-  "ScenesPerBatch" : 24,
-  "DataLoaderThreads" : 12,
+  "ScenesPerBatch" : 64,
+  "DataLoaderThreads" : 16,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,
   "CodeRegularizationLambda" : 1e-4,
