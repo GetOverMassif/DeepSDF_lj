@@ -3,13 +3,13 @@ import numpy as np
 import os
 
 def save_view_point(vis, filename = "viewpoint.json"):
-    param = vis.get_view_control().convert_to_pinhole_camera_parameters()
-    o3d.io.write_pinhole_camera_parameters(filename, param)
+    cam_param = vis.get_view_control().convert_to_pinhole_camera_parameters()
+    o3d.io.write_pinhole_camera_parameters(filename, cam_param)
 
 def load_view_point(vis, filename = "viewpoint.json"):
     ctr = vis.get_view_control()
-    param = o3d.io.read_pinhole_camera_parameters(filename)
-    ctr.convert_from_pinhole_camera_parameters(param)
+    cam_param = o3d.io.read_pinhole_camera_parameters(filename)
+    ctr.convert_from_pinhole_camera_parameters(cam_param)
 
 def getCoordinateAxis(T = np.eye(4), frameSize = 0.5):
     gCoordinateAxis = o3d.geometry.TriangleMesh.create_coordinate_frame().\
@@ -37,41 +37,33 @@ class Visualizer:
         self.vis.register_key_callback(ord('D'), self.step_forward)  # A
         self.vis.register_key_callback(ord('A'), self.step_backward)  # D
         self.vis.register_key_callback(ord('X'), self.step_random)  # R
-        # self.vis.register_key_callback(ord('R'), self.exitVis)  # R
 
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/normed_ShapeNetCore.v2/03001627"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/1007e20d5e811b308351982a6e40cf41"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/1013f70851210a618f2e765c4a8ed3d"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/cbbbb3aebaf2e112ca07b3f65fc99919"
-        self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/deformed_ShapeNetCore.v2/03001627/cbbf0aacb76a1ed17b20cb946bceb58f"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/03001627/1007e20d5e811b308351982a6e40cf41/models"
-        # self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/04256520"
+        self.model_types = ['raw', 'normed']
+        self.model_type = 'raw'
+
+        if self.model_type == 'raw':
+            self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/03001627"
+        elif self.model_type =='normed':
+            self.file_path = "/media/lj/TOSHIBA/dataset/ShapeNet/normed_ShapeNetCore.v2/03001627"
+        else:
+            raise TypeError
+
         dirs = os.listdir(self.file_path)
         self.instances = []
-        for dataname in dirs:
-            print("dataname: ", dataname)
-            if os.path.splitext(dataname)[1] == '.obj':
-                self.instances.append(dataname)
+
+        # for dataname in dirs:
+        #     print("dataname: ", dataname)
+        #     if os.path.splitext(dataname)[1] == '.obj':
+        #         self.instances.append(dataname)
+            
+        self.instances = list(dirs)
         self.instance_num = len(self.instances)
         self.current_idx = -1
 
-        # with open("CheckedMesh.txt","r") as f:
-        #     self.checked_meshes = f.read().split()
-        
-        T = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
-        self.axis = getCoordinateAxis(T, 1.5)
-        self.cube = get_cube_lineset([1,1,1], [-1,-1,-1], [0,0,0])
-
-        self.updateGeometry(1)
+        self.updateGeometry(1, True)
         
         self.vis.run()
         self.vis.destroy_window()
-    
-    # def exitVis(self, vis):
-    #     print("Writing into CheckedMesh.txt.")
-    #     with open("CheckedMesh.txt","w") as f:
-    #         for meshId in self.checked_meshes:
-    #             f.write(str(meshId)+"\n")
     
     def step_forward(self, vis):
         self.updateGeometryWithViewKept(1)
@@ -87,7 +79,7 @@ class Visualizer:
         self.updateGeometry(step)
         load_view_point(self.vis)
 
-    def updateGeometry(self, step = 0):
+    def updateGeometry(self, step = 0, change_view=False):
         print("")
         
         if step == 0:
@@ -95,25 +87,42 @@ class Visualizer:
         else:
             self.current_idx = (self.current_idx + int(step)) % self.instance_num
         self.cuModelIdx = os.path.splitext(self.instances[self.current_idx])[0]
-        # if self.cuModelIdx not in self.checked_meshes:
-        #     self.checked_meshes.append(self.cuModelIdx)
-        # else:
-        #     self.updateGeometry(1)
+
         self.vis.clear_geometries()
         print("file:", self.current_idx,"/", self.instance_num,",",\
-                # len(self.checked_meshes), "checked",\
-                ":", self.cuModelIdx,)
-        # file_name = os.path.join(self.file_path, self.cuModelIdx + "/model_normalized.obj")
-        file_name = os.path.join(self.file_path, str(self.current_idx) + ".obj")
-        # file_name = os.path.join(self.file_path, self.cuModelIdx + "/models/model_normalized.obj")
+                ":", self.cuModelIdx)
+        
+        i_max, j_max = 4, 3
+        interval_size = 1.3
+        bbox_size = 0.4*interval_size
+
+        for i in range(i_max):
+            for j in range(j_max):
+                x, y, z = i * interval_size, j * interval_size, 0
+                pos = [x, y, z]
+                index = (i * j_max + j + self.current_idx) % self.instance_num
+                cuModelIdx = os.path.splitext(self.instances[index])[0]
+                self.showMeshTargetPos(cuModelIdx, pos, change_view, bbox_size)
+
+    def showMeshTargetPos(self, cuModelIdx, pos, change_view, bbox_size=1):
+        x, y, z = pos
+
+        if self.model_type == 'raw':
+            file_name = os.path.join(self.file_path, cuModelIdx + "/models/model_normalized.obj")
+        elif self.model_type =='normed':
+            file_name = os.path.join(self.file_path, cuModelIdx + "/model_normalized.obj")
+        
         mesh = o3d.io.read_triangle_mesh(file_name)
-        # print(len(mesh.vertices))
         mesh.compute_vertex_normals()
         mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
-        
-        self.vis.add_geometry(mesh)
-        self.vis.add_geometry(self.axis)
-        self.vis.add_geometry(self.cube)
+
+        T = np.array([[1,0,0,x],[0,1,0,y],[0,0,1,z],[0,0,0,1]])
+        mesh.transform(T)
+        axis = getCoordinateAxis(T, 1.5 * bbox_size)
+        cube = get_cube_lineset([bbox_size+x,bbox_size+y,bbox_size+z], [-bbox_size+x,-bbox_size+y,-bbox_size+z], [0,0,0])
+        self.vis.add_geometry(mesh, change_view)
+        self.vis.add_geometry(axis, change_view)
+        self.vis.add_geometry(cube, change_view)
 
 if __name__ == "__main__":
     visualizer = Visualizer()

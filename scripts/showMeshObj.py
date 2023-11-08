@@ -1,16 +1,17 @@
 import open3d as o3d
 import numpy as np
 import os
-from show_npz import get_npz_points
+import os.path as osp
+import json
 
 def save_view_point(vis, filename = "viewpoint.json"):
-    param = vis.get_view_control().convert_to_pinhole_camera_parameters()
-    o3d.io.write_pinhole_camera_parameters(filename, param)
+    cam_param = vis.get_view_control().convert_to_pinhole_camera_parameters()
+    o3d.io.write_pinhole_camera_parameters(filename, cam_param)
 
 def load_view_point(vis, filename = "viewpoint.json"):
     ctr = vis.get_view_control()
-    param = o3d.io.read_pinhole_camera_parameters(filename)
-    ctr.convert_from_pinhole_camera_parameters(param)
+    cam_param = o3d.io.read_pinhole_camera_parameters(filename)
+    ctr.convert_from_pinhole_camera_parameters(cam_param)
 
 def getCoordinateAxis(T = np.eye(4), frameSize = 0.5):
     gCoordinateAxis = o3d.geometry.TriangleMesh.create_coordinate_frame().\
@@ -30,6 +31,12 @@ def get_cube_lineset(xyz_max, xyz_min, color, xyz_centroid = [0,0,0]):
     cube_lineset.points = o3d.utility.Vector3dVector(points)
     return cube_lineset
 
+
+ShapeNetClassFile = f"ShapeNetClass.json"
+f_class = open(ShapeNetClassFile, 'r')
+catogory_synset_dict = json.load(f_class)
+f_class.close()
+
 class Visualizer:
     vis = o3d.visualization.VisualizerWithKeyCallback()
 
@@ -38,28 +45,37 @@ class Visualizer:
         self.vis.register_key_callback(ord('D'), self.step_forward)  # A
         self.vis.register_key_callback(ord('A'), self.step_backward)  # D
         self.vis.register_key_callback(ord('X'), self.step_random)  # R
-        # self.vis.register_key_callback(ord('R'), self.exitVis)  # R
 
-        self.file_path = f"/media/lj/TOSHIBA/dataset/ShapeNet/data/SdfSamples/ShapeNetV2/03211117"
+        normed_shapenetcore_path = f"/media/lj/TOSHIBA/dataset/ShapeNet/normed_ShapeNetCore.v2"
+
+        shapenetcore_path = f"/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2"
+
+        # catogory = 'display'
+        catogory = 'bottle'
+
+        # self.file_path = osp.join(shapenetcore_path, catogory_synset_dict[catogory])
+        self.file_path = osp.join(shapenetcore_path, '03046257')
+
+        if not osp.exists(self.file_path):
+            return
+
         dirs = os.listdir(self.file_path)
-
         self.instances = []
-        for dataname in dirs:
-            print("dataname: ", dataname)
-            if os.path.splitext(dataname)[1] == '.npz':
-                self.instances.append(dataname)
 
+        # for dataname in dirs:
+        #     print("dataname: ", dataname)
+        #     if os.path.splitext(dataname)[1] == '.obj':
+        #         self.instances.append(dataname)
+
+        self.instances = list(dirs)
         self.instance_num = len(self.instances)
         self.current_idx = -1
-
-        # with open("CheckedMesh.txt","r") as f:
-        #     self.checked_meshes = f.read().split()
         
         T = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
         self.axis = getCoordinateAxis(T, 1.5)
         self.cube = get_cube_lineset([1,1,1], [-1,-1,-1], [0,0,0])
 
-        self.updateGeometry(1)
+        self.updateGeometry(1, True)
         
         self.vis.run()
         self.vis.destroy_window()
@@ -84,37 +100,34 @@ class Visualizer:
         self.updateGeometry(step)
         load_view_point(self.vis)
 
-    def updateGeometry(self, step = 0):
+    def updateGeometry(self, step = 0, change_view=False):
         print("")
         
         if step == 0:
             self.current_idx = np.random.randint(1, self.instance_num)
         else:
             self.current_idx = (self.current_idx + int(step)) % self.instance_num
-
         self.cuModelIdx = os.path.splitext(self.instances[self.current_idx])[0]
-        # if self.cuModelIdx not in self.checked_meshes:
-        #     self.checked_meshes.append(self.cuModelIdx)
-        # else:
-        #     self.updateGeometry(1)
+
         self.vis.clear_geometries()
         print("file:", self.current_idx,"/", self.instance_num,",",\
-                # len(self.checked_meshes), "checked",\
-                ":", self.cuModelIdx,)
-        # file_name = os.path.join(self.file_path, self.cuModelIdx + "/model_normalized.obj")
-        file_name = os.path.join(self.file_path, self.cuModelIdx + ".npz")
+                ":", self.cuModelIdx)
+        
+        # file_name = os.path.join(self.file_path, self.cuModelIdx + ".obj")
+        file_name = os.path.join(self.file_path, self.cuModelIdx + "/models/model_normalized.obj")
+        # file_name = os.path.join(self.file_path, str(self.current_idx) + ".obj")
         # file_name = os.path.join(self.file_path, self.cuModelIdx + "/models/model_normalized.obj")
 
-        gPtsIn, gPtsOut, [x1,y1,z1], [x2,y2,z2] = get_npz_points(file_name)
-        self.vis.add_geometry(gPtsIn, False)
-        self.vis.add_geometry(gPtsOut, False)
-        # print(len(mesh.vertices))
+        # file_name = f"/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2/03001627/1a8bbf2994788e2743e99e0cae970928/models/model_normalized.obj"
 
-        # mesh.compute_vertex_normals()
-        # mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
+        mesh = o3d.io.read_triangle_mesh(file_name)
+        # print(len(mesh.vertices))
+        mesh.compute_vertex_normals()
+        mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
         
-        self.vis.add_geometry(self.axis)
-        self.vis.add_geometry(self.cube)
+        self.vis.add_geometry(mesh, change_view)
+        self.vis.add_geometry(self.axis, change_view)
+        self.vis.add_geometry(self.cube, change_view)
 
 if __name__ == "__main__":
     visualizer = Visualizer()

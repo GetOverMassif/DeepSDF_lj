@@ -22,7 +22,7 @@ src/Utils.cpp)
 # target_compile_features(PreprocessMeshToNormal PRIVATE cxx_std_14)
 # set_target_properties(PreprocessMeshToNormal PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
-add_executable(PreprocessMesh src/PreprocessMesh.cpp ${SOURCES})
+add_executable(PreprocessMesh src/PreprocessMesh_raw.cpp ${SOURCES})
 target_include_directories(PreprocessMesh PRIVATE third-party/cnpy)
 target_link_libraries(PreprocessMesh PRIVATE CLI11::CLI11 pangolin cnpy Eigen3::Eigen nanoflann::nanoflann Threads::Threads)
 target_compile_features(PreprocessMesh PRIVATE cxx_std_14)

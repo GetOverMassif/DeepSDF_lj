@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 # Copyright 2004-present Facebook. All Rights Reserved.
 
+import sys,os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import torch
 import deep_sdf
 import deep_sdf.workspace as ws
 
-
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[N:] - cumsum[:-N]) / float(N)
-
 
 def load_logs(experiment_directory, type):
 

@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     additional_general_args = []
 
-    deepsdf_dir = os.path.dirname(os.path.abspath(__file__))
+    deepsdf_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     # 表面采样
     if args.surface_sampling:
         executable = os.path.join(deepsdf_dir, "bin/SampleVisibleMeshSurface")

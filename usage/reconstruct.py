@@ -9,6 +9,9 @@ import random
 import time
 import torch
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import deep_sdf
 import deep_sdf.workspace as ws
 
@@ -47,7 +50,6 @@ def reconstruct(
     loss_l1 = torch.nn.L1Loss()
 
     for e in range(num_iterations):
-
         decoder.eval()
         sdf_data = deep_sdf.data.unpack_sdf_samples_from_ram(
             test_sdf, num_samples
