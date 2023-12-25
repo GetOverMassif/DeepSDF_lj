@@ -29,6 +29,26 @@ def get_cube_lineset(xyz_max, xyz_min, color, xyz_centroid = [0,0,0]):
     cube_lineset.points = o3d.utility.Vector3dVector(points)
     return cube_lineset
 
+def set_view(vis, dist = 100., theta = np.pi/6.):
+    vis_ctr = vis.get_view_control()
+    cam = vis_ctr.convert_to_pinhole_camera_parameters()
+    # world to eye
+    cam.extrinsic = np.array([[1., 0., 0., 0.],
+                              [0., np.cos(theta), -np.sin(theta), 0.],
+                              [0., np.sin(theta), np.cos(theta), dist],
+                              [0., 0., 0., 1.]])
+    vis_ctr.convert_from_pinhole_camera_parameters(cam)
+
+def set_view_by_qt(vis, Rq = [0,0,0,1], t = [0,0,2]):
+    vis_ctr = vis.get_view_control()
+    cam = vis_ctr.convert_to_pinhole_camera_parameters()
+    # world to eye
+    T = np.eye(4)
+    rotation_matrix = R.from_quat(Rq).as_matrix()  # qx qy qz qw
+    T[:3, :4] = np.concatenate((rotation_matrix,np.array(t).reshape(3,1)),axis=1)
+    cam.extrinsic = np.linalg.inv(T)
+    vis_ctr.convert_from_pinhole_camera_parameters(cam)
+
 class Visualizer:
     vis = o3d.visualization.VisualizerWithKeyCallback()
 
@@ -39,7 +59,9 @@ class Visualizer:
         self.vis.register_key_callback(ord('X'), self.step_random)  # R
         # self.vis.register_key_callback(ord('R'), self.exitVis)  # R
 
-        self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/displays_64/Reconstructions/2000/Meshes/ShapeNetV2/03211117"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/bottles_64/Reconstructions/2000/Meshes/ShapeNetV2/02876657"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/displays_64/Reconstructions/2000/Meshes/ShapeNetV2/03211117"
+        self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/bottles_64/Reconstructions/2000/Meshes/ShapeNetV2/02876657"
 
         dirs = os.listdir(self.file_path)
             
@@ -48,10 +70,13 @@ class Visualizer:
         self.current_idx = -1
         
         T = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+        # self.axis = getCoordinateAxis(T, 1.5)
         self.axis = getCoordinateAxis(T, 1.5)
         self.cube = get_cube_lineset([1,1,1], [-1,-1,-1], [0,0,0])
 
         self.updateGeometry(1, True)
+
+        set_view(self.vis, dist=10, theta=80 * np.pi / 180)
         
         self.vis.run()
         self.vis.destroy_window()
@@ -97,8 +122,8 @@ class Visualizer:
         mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
         
         self.vis.add_geometry(mesh, change_view)
-        self.vis.add_geometry(self.axis, change_view)
-        self.vis.add_geometry(self.cube, change_view)
+        # self.vis.add_geometry(self.axis, change_view)
+        # self.vis.add_geometry(self.cube, change_view)
 
 if __name__ == "__main__":
     visualizer = Visualizer()

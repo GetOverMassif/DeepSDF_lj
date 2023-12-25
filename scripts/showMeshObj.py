@@ -50,11 +50,11 @@ class Visualizer:
 
         shapenetcore_path = f"/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2"
 
-        # catogory = 'display'
-        catogory = 'bottle'
+        catogory = 'bottles'
+        # catogory = 'bottle'
 
-        # self.file_path = osp.join(shapenetcore_path, catogory_synset_dict[catogory])
-        self.file_path = osp.join(shapenetcore_path, '03046257')
+        self.file_path = osp.join(shapenetcore_path, catogory_synset_dict[catogory])
+        # self.file_path = osp.join(shapenetcore_path, '03046257')
 
         if not osp.exists(self.file_path):
             return
@@ -68,15 +68,18 @@ class Visualizer:
         #         self.instances.append(dataname)
 
         self.instances = list(dirs)
+
+        self.instances = ["632a0bd7869cb763780bbc8616cb15f8", "63d98b2654d8d2a2f9411c52486c6e63", "640835881dd33a2d30354e87bd14ec69"]
+
         self.instance_num = len(self.instances)
         self.current_idx = -1
         
         T = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
-        self.axis = getCoordinateAxis(T, 1.5)
+        self.axis = getCoordinateAxis(T, 0.8)
         self.cube = get_cube_lineset([1,1,1], [-1,-1,-1], [0,0,0])
-
+    
         self.updateGeometry(1, True)
-        
+    
         self.vis.run()
         self.vis.destroy_window()
     
@@ -126,8 +129,8 @@ class Visualizer:
         mesh.paint_uniform_color([i/255 for i in [112, 128, 144]])
         
         self.vis.add_geometry(mesh, change_view)
-        self.vis.add_geometry(self.axis, change_view)
-        self.vis.add_geometry(self.cube, change_view)
+        # self.vis.add_geometry(self.axis, change_view)
+        # self.vis.add_geometry(self.cube, change_view)
 
 if __name__ == "__main__":
     visualizer = Visualizer()
