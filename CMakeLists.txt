@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project("DeepSDF")
 
+
+set(CMAKE_CXX_STANDARD 17)
+
 find_package(CLI11 CONFIG REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(nanoflann REQUIRED)
@@ -15,6 +18,19 @@ include_directories(third-party)
 set(SOURCES
 src/ShaderProgram.cpp
 src/Utils.cpp)
+
+
+# set(CONDA_ENV "/home/lj/anaconda3/envs/dsp-slam")
+
+# # Set Python libraries
+# set(PYTHON_LIBRARIES ${CONDA_ENV}/lib/libpython3.7m.so)
+
+# # Set Python include directories
+# set(PYTHON_INCLUDE_DIRS ${CONDA_ENV}/include/python3.7m)
+
+# # Set Python executable
+# set(PYTHON_EXECUTABLE ${CONDA_ENV}/bin/python3.7)
+
 
 # add_executable(PreprocessMeshToNormal src/PreprocessMeshToNormal.cpp ${SOURCES})
 # target_include_directories(PreprocessMeshToNormal PRIVATE third-party/cnpy)

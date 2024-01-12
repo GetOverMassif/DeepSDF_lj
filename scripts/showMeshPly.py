@@ -61,7 +61,8 @@ class Visualizer:
 
         # self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/bottles_64/Reconstructions/2000/Meshes/ShapeNetV2/02876657"
         # self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/displays_64/Reconstructions/2000/Meshes/ShapeNetV2/03211117"
-        self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/bottles_64/Reconstructions/2000/Meshes/ShapeNetV2/02876657"
+        # self.file_path = "/media/lj/TOSHIBA/dataset/DeepSDF/bottles_64/Reconstructions/2000/Meshes/ShapeNetV2/02876657"
+        self.file_path = "/media/lj/TOSHIBA/dataset/RedwoodOS/data/mesh"
 
         dirs = os.listdir(self.file_path)
             

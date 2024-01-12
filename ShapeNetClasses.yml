@@ -1,0 +1,67 @@
+{
+    # 灯
+    "lamp": "03636649",
+    # 飞机
+    "airplane,aeroplane,plane": "02691156",
+    # 垃圾桶
+    "ashcan,trash can,garbage can,wastebin,ash bin,ash-bin,ashbin,dustbin,trash barrel,trash bin": "02747177",
+    # 包
+    "bag,traveling bag,travelling bag,grip,suitcase": "02773838",
+    # 篮子
+    "basket,handbasket": "02801938",
+    # 浴缸
+    "bathtub,bathing tub,bath,tub": "02808440",
+    # 床
+    "bed": "02818832",
+    
+    "bench": "02828884",
+    "birdhouse": "02843684",
+    "bookshelf": "02871439",
+    # 瓶子
+    "bottle": "02876657",
+    
+    "bowl": "02880940",
+    "bus,autobus,coach,charabanc,double-decker,jitney,motorbus,motorcoach,omnibus,passenger vehi": "02924116",
+    "cabinet": "02933112",
+    "camera,photographic camera": "02942699",
+    "can,tin,tin can": "02946921",
+    "cap": "02954340",
+    "car,auto,automobile,machine,motorcar": "02958343",
+    "cellular telephone,cellular phone,cellphone,cell,mobile phone": "02992529",
+    "chair": "03001627",
+    "clock": "03046257",
+    "computer keyboard,keypad": "03085013",
+    "dishwasher,dish washer,dishwashing machine": "03207941",
+    "display,video display": "03211117",
+    "earphone,earpiece,headphone,phone": "03261776",
+    "faucet,spigot": "03325088",
+    "file,file cabinet,filing cabinet": "03337140",
+    "guitar": "03467517",
+    "helmet": "03513137",
+    "jar": "03593526",
+    "knife": "03624134",
+    "laptop,laptop computer": "03642806",
+    "loudspeaker,speaker,speaker unit,loudspeaker system,speaker system": "03691459",
+    "mailbox,letter box": "03710193",
+    "microphone,mike": "03759954",
+    "microwave,microwave oven": "03761084",
+    "motorcycle,bike": "03790512",
+    "mug": "03797390",
+    "piano,pianoforte,forte-piano": "03928116",
+    "pillow": "03938244",
+    "pistol,handgun,side arm,shooting iron": "03948459",
+    "pot,flowerpot": "03991062",
+    "printer,printing machine": "04004475",
+    "remote control,remote": "04074963",
+    "rifle": "04090263",
+    "rocket,projectile": "04099429",
+    "skateboard": "04225987",
+    "sofa,couch,lounge": "04256520",
+    "stove": "04330267",
+    "table": "04379243",
+    "telephone,phone,telephone set": "04401088",
+    "tower": "04460130",
+    "train,railroad train": "04468005",
+    "vessel,watercraft": "04530566",
+    "washer,automatic washer,washing machine": "04554684"
+}
