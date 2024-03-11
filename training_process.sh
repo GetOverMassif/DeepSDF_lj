@@ -7,7 +7,9 @@ SHAPENET_DIR=/media/lj/TOSHIBA/dataset/ShapeNet
 SHAPENETCORE2_DIR=/media/lj/TOSHIBA/dataset/ShapeNet/ShapeNetCore.v2
 
 # CLASS=keyboards
-CLASS=bowls
+# CLASS=bowls
+# CLASS=laptops
+CLASS=$1
 
 
 # 1. 查询，把新类别和对应的shapenet编号插入大盘ShapeNetClass.json中

@@ -1,5 +1,5 @@
 {
-    # 灯
+    # 台灯
     "lamp": "03636649",
     # 飞机
     "airplane,aeroplane,plane": "02691156",
@@ -19,7 +19,7 @@
     "bookshelf": "02871439",
     # 瓶子
     "bottle": "02876657",
-    
+
     "bowl": "02880940",
     "bus,autobus,coach,charabanc,double-decker,jitney,motorbus,motorcoach,omnibus,passenger vehi": "02924116",
     "cabinet": "02933112",
